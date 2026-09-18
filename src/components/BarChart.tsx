@@ -13,13 +13,18 @@ interface BarChartProps {
   valuePrefix?: string;
 }
 
+/** Trunca un label para que quepa en el margen izquierdo */
+function truncateLabel(label: string, maxChars: number): string {
+  if (label.length <= maxChars) return label;
+  return label.slice(0, Math.max(maxChars - 1, 4)) + '…';
+}
+
 export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '$' }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const lastWidthRef = useRef(0);
 
-  // Clave estable: solo redibuja cuando cambian labels/valores reales
   const dataKey = useMemo(
     () => data.map((d) => `${d.label}:${d.value}:${d.colorVar ?? ''}`).join('|'),
     [data]
@@ -32,21 +37,20 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
     const svgEl = svgRef.current;
 
     const draw = () => {
-      const width = Math.max(container.clientWidth, 280);
-      // Evitar redibujar si el ancho no cambió (el hover no debe disparar redraw)
+      const width = Math.max(container.clientWidth, 320);
       if (width === lastWidthRef.current && lastWidthRef.current !== 0) {
         return;
       }
       lastWidthRef.current = width;
 
-      const maxLabelLen = d3.max(data, (d) => d.label.length) ?? 8;
-      const margin = {
-        top: 4,
-        right: 52,
-        bottom: 4,
-        left: Math.min(20 + maxLabelLen * 7, 110),
-      };
-      const rowH = 36;
+      const maxLabelLen = d3.max(data, (d) => d.label.length) ?? 10;
+      const leftMargin = Math.min(Math.max(maxLabelLen * 7.2 + 16, 120), 200);
+      const rightMargin = 64;
+      const margin = { top: 8, right: rightMargin, bottom: 8, left: leftMargin };
+
+      const maxChars = Math.floor((leftMargin - 16) / 7);
+
+      const rowH = 42;
       const height = data.length * rowH + margin.top + margin.bottom;
 
       const svg = d3.select(svgEl);
@@ -60,16 +64,15 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
       const max = d3.max(data, (d) => d.value) ?? 1;
       const x = d3
         .scaleLinear()
-        .domain([0, max * 1.05])
+        .domain([0, max * 1.08])
         .range([margin.left, width - margin.right]);
 
       const y = d3
         .scaleBand()
         .domain(data.map((d) => d.label))
         .range([margin.top, height - margin.bottom])
-        .padding(0.28);
+        .padding(0.32);
 
-      // Fondo de cada fila (track)
       svg
         .append('g')
         .selectAll('rect')
@@ -81,7 +84,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
         .attr('height', y.bandwidth())
         .attr('rx', 6)
         .attr('fill', 'var(--color-borders)')
-        .attr('opacity', 0.45);
+        .attr('opacity', 0.4);
 
       const bars = svg
         .append('g')
@@ -108,13 +111,16 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
         .selectAll('text')
         .data(data)
         .join('text')
-        .attr('x', margin.left - 10)
+        .attr('x', margin.left - 12)
         .attr('y', (d) => (y(d.label) ?? 0) + y.bandwidth() / 2)
         .attr('dy', '0.35em')
         .attr('text-anchor', 'end')
         .attr('fill', 'var(--color-textSec)')
         .attr('font-size', 12)
         .attr('font-weight', 500)
+        .attr('font-family', 'Inter, system-ui, sans-serif')
+        .text((d) => truncateLabel(d.label, maxChars))
+        .append('title')
         .text((d) => d.label);
 
       svg
@@ -122,12 +128,31 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
         .selectAll('text')
         .data(data)
         .join('text')
-        .attr('x', (d) => x(d.value) + 8)
+        .attr('x', (d) => {
+          const barEnd = x(d.value);
+          const spaceRight = width - margin.right - barEnd;
+          if (spaceRight < 48 && barEnd - margin.left > 56) {
+            return barEnd - 8;
+          }
+          return barEnd + 8;
+        })
         .attr('y', (d) => (y(d.label) ?? 0) + y.bandwidth() / 2)
         .attr('dy', '0.35em')
-        .attr('fill', 'var(--color-textMain)')
+        .attr('text-anchor', (d) => {
+          const barEnd = x(d.value);
+          const spaceRight = width - margin.right - barEnd;
+          if (spaceRight < 48 && barEnd - margin.left > 56) return 'end';
+          return 'start';
+        })
+        .attr('fill', (d) => {
+          const barEnd = x(d.value);
+          const spaceRight = width - margin.right - barEnd;
+          if (spaceRight < 48 && barEnd - margin.left > 56) return '#fff';
+          return 'var(--color-textMain)';
+        })
         .attr('font-size', 12)
         .attr('font-weight', 700)
+        .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('opacity', 0)
         .text((d) => `${valuePrefix}${d.value.toFixed(0)}`)
         .transition()
@@ -140,15 +165,16 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
       tooltip
         .append('rect')
         .attr('rx', 6)
-        .attr('height', 26)
+        .attr('height', 28)
         .attr('fill', 'var(--color-sidebar)')
-        .attr('opacity', 0.95);
+        .attr('opacity', 0.96);
 
       const tooltipText = tooltip
         .append('text')
         .attr('fill', '#fff')
         .attr('font-size', 12)
         .attr('font-weight', 600)
+        .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('text-anchor', 'middle')
         .attr('dy', '0.35em');
 
@@ -165,9 +191,9 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
           let tx = mx - tw / 2;
           if (tx < 4) tx = 4;
           if (tx + tw > width - 4) tx = width - tw - 4;
-          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - 34})`);
+          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - 36})`);
           tooltip.select('rect').attr('width', tw).attr('x', 0).attr('y', 0);
-          tooltipText.attr('x', tw / 2).attr('y', 13);
+          tooltipText.attr('x', tw / 2).attr('y', 14);
         })
         .on('mouseleave', function () {
           tooltip.attr('opacity', 0);
@@ -176,34 +202,33 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title, valuePrefix = '
         });
     };
 
-    // Forzar primer dibujo
     lastWidthRef.current = 0;
     draw();
 
     const ro = new ResizeObserver(() => {
-      // Solo reaccionar a cambios de ancho real
-      const width = Math.max(container.clientWidth, 280);
+      const width = Math.max(container.clientWidth, 320);
       if (width !== lastWidthRef.current) {
         draw();
       }
     });
     ro.observe(container);
     return () => ro.disconnect();
-    // dataKey + valuePrefix: solo redibuja cuando los datos realmente cambian
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataKey, valuePrefix]);
 
   return (
     <div className="w-full" ref={containerRef}>
-      {title && <h3 className="text-sm font-bold text-textMain mb-4">{title}</h3>}
-      <div className="w-full flex justify-center">
-        <svg ref={svgRef} className="w-full max-w-full overflow-visible" />
+      {title && (
+        <h3 className="text-sm font-bold text-textMain mb-4 text-left">{title}</h3>
+      )}
+      <div className="w-full overflow-x-auto">
+        <svg ref={svgRef} className="w-full min-w-[280px] overflow-visible" />
       </div>
-      {/* Altura reservada para evitar layout shift que dispare ResizeObserver */}
       <p className="text-xs text-textSec mt-3 text-center min-h-[1.25rem]">
         {hovered ? (
           <span className="animate-fade-in">
-            Seleccionado: <span className="font-semibold text-textMain">{hovered}</span>
+            Seleccionado:{' '}
+            <span className="font-semibold text-textMain">{hovered}</span>
           </span>
         ) : (
           <span className="invisible">Seleccionado: —</span>

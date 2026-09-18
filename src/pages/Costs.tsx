@@ -2,9 +2,20 @@ import React, { useState } from 'react';
 import { INITIAL_COSTS } from '../data/awsServices';
 import type { CostItem } from '../types';
 import { CostCard } from '../components/CostCard';
-import { DonutChart } from '../components/DonutChart';
+import { BarChart } from '../components/BarChart';
 import { DollarSign, Plus, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+
+const BAR_COLORS = [
+  'var(--color-primary)',
+  'var(--color-costs)',
+  'var(--color-security)',
+  'var(--color-alerts)',
+  '#7C3AED',
+  '#0891B2',
+  '#64748B',
+  '#EC4899',
+];
 
 export const CostsView: React.FC = () => {
   const { selectedRegion, addNotification } = useApp();
@@ -34,7 +45,7 @@ export const CostsView: React.FC = () => {
     const monthlyCost = quantity * hoursPerMonth * costPerHour;
     const newItem: CostItem = {
       id: Date.now().toString(),
-      serviceName,
+      serviceName: serviceName.trim(),
       quantity,
       hoursPerMonth,
       costPerHour,
@@ -43,18 +54,40 @@ export const CostsView: React.FC = () => {
     };
     persistCosts([...costs, newItem]);
     setServiceName('');
+    setQuantity(1);
     setHoursPerMonth(730);
+    setCostPerHour(0.05);
     addNotification({
       title: 'Nueva estimación de costo',
-      message: `Se añadió ${serviceName} por $${monthlyCost.toFixed(2)}/mes.`,
+      message: `Se añadió ${newItem.serviceName} por $${monthlyCost.toFixed(2)}/mes.`,
       type: 'success',
     });
+  };
+
+  const handleDeleteCost = (id: string) => {
+    const item = costs.find((c) => c.id === id);
+    const next = costs.filter((c) => c.id !== id);
+    persistCosts(next);
+    if (item) {
+      addNotification({
+        title: 'Estimación eliminada',
+        message: `Se eliminó ${item.serviceName} ($${item.monthlyCost.toFixed(2)}/mes).`,
+        type: 'info',
+      });
+    }
   };
 
   const totalMonthly = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const totalAnnual = totalMonthly * 12;
 
-  const distribution = costs.map((c) => ({ label: c.serviceName, value: c.monthlyCost }));
+  const chartData = costs
+    .slice()
+    .sort((a, b) => b.monthlyCost - a.monthlyCost)
+    .map((c, i) => ({
+      label: c.serviceName,
+      value: c.monthlyCost,
+      colorVar: BAR_COLORS[i % BAR_COLORS.length],
+    }));
 
   const exportReport = () => {
     const lines = [
@@ -106,27 +139,45 @@ export const CostsView: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs flex items-center justify-between card-hover">
           <div>
-            <span className="text-textSec text-xs font-semibold uppercase">Costo Mensual Total</span>
+            <span className="text-textSec text-xs font-semibold uppercase tracking-wide">
+              Costo Mensual Total
+            </span>
             <h3 className="text-3xl font-bold text-costs mt-1">${totalMonthly.toFixed(2)}</h3>
           </div>
-          <div className="p-3 bg-amber-50 text-costs rounded-xl">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-costs rounded-xl">
             <DollarSign size={28} />
           </div>
         </div>
 
         <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs flex items-center justify-between card-hover">
           <div>
-            <span className="text-textSec text-xs font-semibold uppercase">Costo Anual Proyectado</span>
+            <span className="text-textSec text-xs font-semibold uppercase tracking-wide">
+              Costo Anual Proyectado
+            </span>
             <h3 className="text-3xl font-bold text-textMain mt-1">${totalAnnual.toFixed(2)}</h3>
           </div>
-          <div className="p-3 bg-slate-100 text-textSec rounded-xl">
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-textSec rounded-xl">
             <DollarSign size={28} />
           </div>
         </div>
       </div>
 
       <div className="bg-cards border border-borders rounded-2xl p-6 shadow-xs">
-        <DonutChart title="Distribución de Costos por Servicio" data={distribution} />
+        {chartData.length > 0 ? (
+          <BarChart
+            title="Distribución de Costos por Servicio (mensual)"
+            data={chartData}
+            valuePrefix="$"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <DollarSign size={36} className="text-textSec mb-3 opacity-50" />
+            <p className="text-sm font-semibold text-textMain">Sin estimaciones de costo</p>
+            <p className="text-xs text-textSec mt-1">
+              Añade un servicio abajo para ver la distribución en el gráfico.
+            </p>
+          </div>
+        )}
       </div>
 
       <form
@@ -134,7 +185,9 @@ export const CostsView: React.FC = () => {
         className="bg-cards border border-borders p-5 rounded-2xl shadow-xs flex flex-wrap gap-4 items-end"
       >
         <div className="flex-1 min-w-[200px]">
-          <label className="text-xs font-semibold text-textSec block mb-1">Nombre Servicio/Recurso</label>
+          <label className="text-xs font-semibold text-textSec block mb-1">
+            Nombre Servicio/Recurso
+          </label>
           <input
             type="text"
             required
@@ -155,7 +208,9 @@ export const CostsView: React.FC = () => {
           />
         </div>
         <div className="w-36">
-          <label className="text-xs font-semibold text-textSec block mb-1">Horas Estimadas/Mes</label>
+          <label className="text-xs font-semibold text-textSec block mb-1">
+            Horas Estimadas/Mes
+          </label>
           <input
             type="number"
             min={1}
@@ -170,6 +225,7 @@ export const CostsView: React.FC = () => {
           <input
             type="number"
             step="0.001"
+            min={0}
             value={costPerHour}
             onChange={(e) => setCostPerHour(Number(e.target.value))}
             className="w-full border border-borders p-2.5 rounded-xl text-sm bg-bgMain text-textMain"
@@ -184,9 +240,15 @@ export const CostsView: React.FC = () => {
       </form>
 
       <div className="space-y-3">
-        {costs.map((item) => (
-          <CostCard key={item.id} item={item} />
-        ))}
+        {costs.length === 0 ? (
+          <p className="text-sm text-textSec text-center py-6">
+            No hay estimaciones. Usa el formulario para agregar la primera.
+          </p>
+        ) : (
+          costs.map((item) => (
+            <CostCard key={item.id} item={item} onDelete={handleDeleteCost} />
+          ))
+        )}
       </div>
     </div>
   );
