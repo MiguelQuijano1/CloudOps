@@ -168,6 +168,7 @@ export const CostsView: React.FC = () => {
             title="Distribución de Costos por Servicio (mensual)"
             data={chartData}
             valuePrefix="$"
+            orientation="vertical"
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
