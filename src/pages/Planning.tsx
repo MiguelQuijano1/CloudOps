@@ -5,6 +5,18 @@ import { Save, CheckCircle, FileText, Users } from 'lucide-react';
 
 const AVAILABILITY_OPTIONS = ['99.0%', '99.5%', '99.9%', '99.99%'];
 const SERVICE_OPTIONS = INITIAL_SERVICES.map((s) => s.name);
+const APP_TYPE_OPTIONS = [
+  'Web Enterprise App',
+  'API / Microservicios',
+  'Aplicación Móvil Backend',
+  'E-commerce',
+  'Data Analytics / BI',
+  'IoT / Streaming',
+  'SaaS Multi-tenant',
+  'Sitio Web Estático',
+  'Batch / Procesamiento',
+  'Otro',
+];
 
 export const PlanningView: React.FC = () => {
   const [plans, setPlans] = useState<CloudPlan[]>(() => {
@@ -80,13 +92,18 @@ export const PlanningView: React.FC = () => {
 
           <div>
             <label className="text-xs font-semibold text-textSec block mb-1">Tipo de Aplicación</label>
-            <input
-              type="text"
+            <select
               required
               value={form.appType}
               onChange={(e) => setForm({ ...form, appType: e.target.value })}
               className="w-full border border-borders p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 bg-bgMain"
-            />
+            >
+              {APP_TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
