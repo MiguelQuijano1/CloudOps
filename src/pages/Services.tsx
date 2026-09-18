@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { INITIAL_SERVICES } from '../data/awsServices';
 import { ServiceCard } from '../components/ServiceCard';
+import { ServiceDetailModal } from '../components/ServiceDetailModal';
 import { Search } from 'lucide-react';
+import type { AWSService } from '../types';
 
 export const ServicesView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [selectedService, setSelectedService] = useState<AWSService | null>(null);
 
   const filteredServices = INITIAL_SERVICES.filter((srv) => {
     const matchesSearch =
@@ -16,13 +19,12 @@ export const ServicesView: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-textMain">Catálogo de Servicios AWS</h1>
         <p className="text-textSec text-sm">Servicios integrados en la arquitectura propuesta.</p>
       </div>
 
-      {/* Buscador y Filtros */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-3 text-textSec" size={18} />
@@ -31,7 +33,7 @@ export const ServicesView: React.FC = () => {
             placeholder="Buscar servicio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-cards border border-borders rounded-xl text-sm focus:outline-primary"
+            className="w-full pl-10 pr-4 py-2.5 bg-cards border border-borders rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 text-textMain"
           />
         </div>
 
@@ -52,12 +54,26 @@ export const ServicesView: React.FC = () => {
         </div>
       </div>
 
-      {/* Catálogo usando ServiceCard reutilizable */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredServices.map((srv) => (
-          <ServiceCard key={srv.id} service={srv} />
-        ))}
-      </div>
+      {filteredServices.length === 0 ? (
+        <div className="bg-cards border border-borders rounded-2xl p-10 text-center text-textSec text-sm">
+          No se encontraron servicios con esos criterios.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredServices.map((srv, i) => (
+            <div key={srv.id} className={`stagger-${Math.min(i + 1, 5)}`}>
+              <ServiceCard service={srv} onClick={() => setSelectedService(srv)} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selectedService && (
+        <ServiceDetailModal
+          service={selectedService}
+          onClose={() => setSelectedService(null)}
+        />
+      )}
     </div>
   );
 };
