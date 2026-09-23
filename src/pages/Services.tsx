@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { INITIAL_SERVICES } from '../data/awsServices';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceDetailModal } from '../components/ServiceDetailModal';
-import { Search, Gift } from 'lucide-react';
+import { PageHeader } from '../components/PageHeader';
+import { MiniStat } from '../components/MiniStat';
+import { Search, Gift, Link2, Gauge, Globe, ShieldCheck } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import type { AWSService } from '../types';
 
 const FREE_TIER = [
@@ -33,6 +36,7 @@ const FREE_TIER = [
 ];
 
 export const ServicesView: React.FC = () => {
+  const { selectedRegion } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [selectedService, setSelectedService] = useState<AWSService | null>(null);
@@ -45,11 +49,26 @@ export const ServicesView: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const activeCount = INITIAL_SERVICES.filter((s) => s.status === 'Active').length;
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-textMain">Catálogo de Servicios AWS</h1>
-        <p className="text-textSec text-sm">Servicios integrados en la arquitectura propuesta.</p>
+      <PageHeader
+        eyebrow="Módulo 7 · Práctica Integrativa"
+        title="Catálogo de Servicios AWS Desplegados"
+        description="Inventario integral de recursos de nube aprovisionados y auditados en la arquitectura propuesta."
+        badge={{ label: `${activeCount} de ${INITIAL_SERVICES.length} Desplegados y Operativos`, tone: 'security' }}
+        actions={
+          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+            <Link2 size={16} /> Vincular a Propuesta
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <MiniStat label="Cumplimiento SLA" value="99.98%" icon={Gauge} tone="security" footnote="Dentro del objetivo" />
+        <MiniStat label="Región Predeterminada" value={selectedRegion} icon={Globe} footnote="3 AZs disponibles" />
+        <MiniStat label="Postura de Seguridad" value="Auditada · 100%" icon={ShieldCheck} tone="security" footnote="Políticas CIS AWS v1.4" />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -69,11 +88,10 @@ export const ServicesView: React.FC = () => {
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                categoryFilter === cat
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${categoryFilter === cat
                   ? 'bg-primary text-white'
                   : 'bg-cards text-textSec border border-borders hover:bg-bgMain'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -86,9 +104,9 @@ export const ServicesView: React.FC = () => {
           No se encontraron servicios con esos criterios.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
           {filteredServices.map((srv, i) => (
-            <div key={srv.id} className={`stagger-${Math.min(i + 1, 5)}`}>
+            <div key={srv.id} className={`h-full stagger-${Math.min(i + 1, 5)}`}>
               <ServiceCard service={srv} onClick={() => setSelectedService(srv)} />
             </div>
           ))}

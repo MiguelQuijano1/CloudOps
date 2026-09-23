@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { BarChart } from '../components/BarChart';
 import { StatusBadge } from '../components/StatusBadge';
-import { MOCK_SECURITY_CHECKS, INITIAL_SERVICES, MOCK_REGIONS } from '../data/awsServices';
+import { MOCK_SECURITY_CHECKS, INITIAL_SERVICES, MOCK_REGIONS, INITIAL_COSTS } from '../data/awsServices';
 import {
   Server,
   Globe,
@@ -16,10 +16,14 @@ import {
   Layers,
   Lock,
   Activity,
+  ClipboardList,
+  Network,
+  Boxes,
+  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
-import type { RegionInfo } from '../types';
+import type { RegionInfo, CloudPlan, CostItem } from '../types';
 
 /** Servicios desplegados por región (misma lógica que Infraestructura) */
 const REGION_SERVICE_MAP: Record<string, string[]> = {
@@ -129,6 +133,16 @@ function regionUsageLabel(region: RegionInfo | undefined): {
 export const DashboardView: React.FC = () => {
   const { selectedRegion } = useApp();
 
+  const [storedPlans] = useState<CloudPlan[]>(() => {
+    const saved = localStorage.getItem('cloud_plans');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [storedCosts] = useState<CostItem[]>(() => {
+    const saved = localStorage.getItem('cloudops_costs');
+    return saved ? JSON.parse(saved) : INITIAL_COSTS;
+  });
+
   const regionInfo = MOCK_REGIONS.find((r) => r.id === selectedRegion);
   const serviceNames = REGION_SERVICE_MAP[selectedRegion] ?? [];
   const regionServices = INITIAL_SERVICES.filter((s) => serviceNames.includes(s.name));
@@ -184,8 +198,11 @@ export const DashboardView: React.FC = () => {
     <div className="space-y-6 animate-fade-in" key={selectedRegion}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-textMain">Resumen General CloudOps</h1>
-          <p className="text-textSec text-sm">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1.5">
+            Infraestructura AWS CloudOps · Producción Multi-Región
+          </p>
+          <h1 className="text-2xl font-bold text-textMain">Consola de Control Central</h1>
+          <p className="text-textSec text-sm mt-1">
             Monitoreo y estado de la solución en{' '}
             <strong className="text-textMain">{regionInfo?.name ?? selectedRegion}</strong>
           </p>
@@ -194,13 +211,12 @@ export const DashboardView: React.FC = () => {
           <span className="text-xs text-textSec font-medium">Estado de la región:</span>
           <StatusBadge status={usage.badgeStatus} />
           <span
-            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-              inUse
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${inUse
                 ? 'bg-emerald-50 text-security border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800'
                 : regionInfo?.status === 'Maintenance'
                   ? 'bg-red-50 text-alerts border-red-200 dark:bg-red-950/40 dark:border-red-800'
                   : 'bg-slate-100 text-textSec border-borders dark:bg-slate-800'
-            }`}
+              }`}
           >
             {usage.label}
           </span>
@@ -338,13 +354,12 @@ export const DashboardView: React.FC = () => {
               {' · '}
               Salud:{' '}
               <span
-                className={`font-semibold ${
-                  healthPercent >= 70
+                className={`font-semibold ${healthPercent >= 70
                     ? 'text-security'
                     : healthPercent >= 40
                       ? 'text-costs'
                       : 'text-alerts'
-                }`}
+                  }`}
               >
                 {healthPercent}%
               </span>
@@ -370,11 +385,10 @@ export const DashboardView: React.FC = () => {
                 <React.Fragment key={node.id}>
                   <div className="flex flex-col items-center gap-2 flex-1 min-w-[90px]">
                     <div
-                      className={`w-full flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${
-                        isActive
+                      className={`w-full flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${isActive
                           ? 'bg-bgMain border-borders hover:shadow-xs'
                           : 'bg-bgMain/50 border-borders opacity-55'
-                      }`}
+                        }`}
                     >
                       <Icon
                         className={isActive ? node.color : 'text-textSec'}
@@ -444,6 +458,193 @@ export const DashboardView: React.FC = () => {
               }
             />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 animate-fade-in stagger-4">
+        <div>
+          <h2 className="text-base font-bold text-textMain">Resumen General del Sistema</h2>
+          <p className="text-xs text-textSec mt-0.5">
+            Estado consolidado y en vivo de los 6 módulos de la plataforma CloudOps
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Link
+            to="/planning"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-primary shrink-0">
+              <ClipboardList size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Planificación Cloud</p>
+              <p className="text-base font-bold text-textMain">
+                {storedPlans.length} propuesta{storedPlans.length === 1 ? '' : 's'}
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+
+          <Link
+            to="/costs"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-costs shrink-0">
+              <DollarSign size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Costos Estimados</p>
+              <p className="text-base font-bold text-textMain">
+                ${storedCosts.reduce((a, c) => a + c.monthlyCost, 0).toFixed(2)}/mes
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+
+          <Link
+            to="/infrastructure"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 shrink-0">
+              <Globe size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Infraestructura Global</p>
+              <p className="text-base font-bold text-textMain">
+                {MOCK_REGIONS.filter((r) => r.status === 'Operational').length}/{MOCK_REGIONS.length} regiones activas
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+
+          <Link
+            to="/security"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-security shrink-0">
+              <ShieldCheck size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Seguridad e IAM</p>
+              <p className="text-base font-bold text-textMain">
+                {Math.round(
+                  (MOCK_SECURITY_CHECKS.filter((c) => c.status === 'correct').length /
+                    MOCK_SECURITY_CHECKS.length) *
+                  100
+                )}
+                /100 score
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+
+          <Link
+            to="/network"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-500 shrink-0">
+              <Network size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Arquitectura de Red</p>
+              <p className="text-base font-bold text-textMain flex items-center gap-1">
+                <CheckCircle2 size={14} className="text-security" /> VPC Online
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+
+          <Link
+            to="/services"
+            className="flex items-center gap-3 p-4 rounded-2xl border border-borders bg-cards shadow-xs card-hover"
+          >
+            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-textSec shrink-0">
+              <Boxes size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-textSec">Servicios AWS</p>
+              <p className="text-base font-bold text-textMain">
+                {INITIAL_SERVICES.filter((s) => s.status === 'Active').length}/{INITIAL_SERVICES.length} desplegados
+              </p>
+            </div>
+            <ArrowRight size={14} className="text-textSec shrink-0" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="space-y-4 animate-fade-in stagger-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-textMain">Módulos de Gestión Rápida</h2>
+            <p className="text-xs text-textSec mt-0.5">
+              Acceso directo a las áreas de configuración y gobierno de la nube
+            </p>
+          </div>
+          <span className="text-xs font-semibold text-textSec">4 suites activas</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              to: '/planning',
+              icon: ClipboardList,
+              color: 'text-primary',
+              bg: 'bg-blue-50 dark:bg-blue-950/40',
+              title: 'Planificación Cloud',
+              desc: 'Registro de propuestas, dimensionamiento y objetivos de migración.',
+              footer: `${regionServices.length} servicios en uso`,
+            },
+            {
+              to: '/costs',
+              icon: DollarSign,
+              color: 'text-costs',
+              bg: 'bg-amber-50 dark:bg-amber-950/40',
+              title: 'Costos y Facturación',
+              desc: 'Estimaciones, distribución de gasto y proyección anual.',
+              footer: `$${totalCost.toFixed(2)} / mes`,
+            },
+            {
+              to: '/network',
+              icon: Network,
+              color: 'text-indigo-500',
+              bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+              title: 'Arquitectura de Red',
+              desc: 'VPC, subredes, Route 53, CloudFront y flujo de tráfico.',
+              footer: `${healthPercent}% de salud`,
+            },
+            {
+              to: '/services',
+              icon: Boxes,
+              color: 'text-security',
+              bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+              title: 'Servicios AWS',
+              desc: 'Catálogo de cómputo, almacenamiento, base de datos y redes.',
+              footer: `${INITIAL_SERVICES.length} recursos vivos`,
+            },
+          ].map((mod) => {
+            const Icon = mod.icon;
+            return (
+              <Link
+                key={mod.to}
+                to={mod.to}
+                className="group bg-cards border border-borders rounded-2xl p-5 shadow-xs card-hover flex flex-col gap-3"
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mod.bg} ${mod.color}`}>
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-textMain">{mod.title}</h3>
+                  <p className="text-xs text-textSec mt-1 leading-relaxed">{mod.desc}</p>
+                </div>
+                <div className="flex items-center justify-between pt-2 mt-auto border-t border-borders">
+                  <span className="text-[11px] font-semibold text-textSec">{mod.footer}</span>
+                  <ArrowRight
+                    size={14}
+                    className="text-primary group-hover:translate-x-0.5 transition-transform"
+                  />
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

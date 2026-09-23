@@ -30,6 +30,10 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
+        <div className="hidden md:flex items-center gap-1.5 pl-3 pr-3.5 py-1.5 rounded-full bg-security/10 border border-security/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-security animate-pulse" />
+          <span className="text-xs font-bold text-security">Operativo</span>
+        </div>
         <div className="relative hidden md:flex items-center">
           <Globe size={16} className="absolute left-2.5 text-textSec pointer-events-none" />
           <select

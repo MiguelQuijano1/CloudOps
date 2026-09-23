@@ -3,7 +3,10 @@ import { INITIAL_COSTS } from '../data/awsServices';
 import type { CostItem } from '../types';
 import { CostCard } from '../components/CostCard';
 import { BarChart } from '../components/BarChart';
-import { DollarSign, Plus, Download } from 'lucide-react';
+import { DonutChart } from '../components/DonutChart';
+import { PageHeader } from '../components/PageHeader';
+import { MiniStat } from '../components/MiniStat';
+import { DollarSign, Plus, Download, TrendingDown, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const BAR_COLORS = [
@@ -79,6 +82,8 @@ export const CostsView: React.FC = () => {
 
   const totalMonthly = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const totalAnnual = totalMonthly * 12;
+  const potentialSavings = totalMonthly * 0.18;
+  const donutData = costs.map((c) => ({ label: c.serviceName, value: c.monthlyCost }));
 
   const chartData = costs
     .slice()
@@ -120,65 +125,76 @@ export const CostsView: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-textMain">Costos y Economía Cloud</h1>
-          <p className="text-textSec text-sm">
-            Estimación y calculadora de infraestructura AWS · Región: {selectedRegion}
-          </p>
-        </div>
-        <button
-          onClick={exportReport}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-cards border border-borders rounded-xl text-sm font-semibold text-textMain hover:bg-bgMain transition-colors"
-        >
-          <Download size={18} className="text-primary" />
-          Exportar reporte CSV
-        </button>
+      <PageHeader
+        eyebrow="FinOps Engine · AWS Ecosystem"
+        title="Estimación de Costos y Economía Cloud"
+        description="Simulación actuarial de recursos aprovisionados, compromisos y desglose presupuestario en tiempo real."
+        badge={{ label: 'Optimizado con Savings Plans', tone: 'security' }}
+        actions={
+          <button
+            onClick={exportReport}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+          >
+            <Download size={16} />
+            Exportar Informe CSV
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <MiniStat
+          label="Total Mensual Estimado"
+          value={`$${totalMonthly.toFixed(2)}`}
+          icon={DollarSign}
+          tone="costs"
+          footnote={`Región: ${selectedRegion}`}
+        />
+        <MiniStat
+          label="Proyección Anual"
+          value={`$${totalAnnual.toFixed(2)}`}
+          icon={TrendingDown}
+          tone="neutral"
+          footnote="Amortización simple 12 meses"
+        />
+        <MiniStat
+          label="Ahorro Potencial FinOps"
+          value={`-$${potentialSavings.toFixed(2)}`}
+          icon={PiggyBank}
+          tone="security"
+          footnote="Con Reserved Instances (est. -18%)"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs flex items-center justify-between card-hover">
-          <div>
-            <span className="text-textSec text-xs font-semibold uppercase tracking-wide">
-              Costo Mensual Total
-            </span>
-            <h3 className="text-3xl font-bold text-costs mt-1">${totalMonthly.toFixed(2)}</h3>
-          </div>
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-costs rounded-xl">
-            <DollarSign size={28} />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-cards border border-borders rounded-2xl p-6 shadow-xs">
+          {chartData.length > 0 ? (
+            <BarChart
+              title="Distribución de Costos por Servicio (mensual)"
+              data={chartData}
+              valuePrefix="$"
+              orientation="vertical"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <DollarSign size={36} className="text-textSec mb-3 opacity-50" />
+              <p className="text-sm font-semibold text-textMain">Sin estimaciones de costo</p>
+              <p className="text-xs text-textSec mt-1">
+                Añade un servicio abajo para ver la distribución en el gráfico.
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs flex items-center justify-between card-hover">
-          <div>
-            <span className="text-textSec text-xs font-semibold uppercase tracking-wide">
-              Costo Anual Proyectado
-            </span>
-            <h3 className="text-3xl font-bold text-textMain mt-1">${totalAnnual.toFixed(2)}</h3>
-          </div>
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-textSec rounded-xl">
-            <DollarSign size={28} />
-          </div>
+        <div className="bg-cards border border-borders rounded-2xl p-6 shadow-xs">
+          {donutData.length > 0 ? (
+            <DonutChart title="Distribución y Desglose Presupuestario" data={donutData} />
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <DollarSign size={28} className="text-textSec mb-2 opacity-40" />
+              <p className="text-xs text-textSec">Sin datos para graficar todavía.</p>
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="bg-cards border border-borders rounded-2xl p-6 shadow-xs">
-        {chartData.length > 0 ? (
-          <BarChart
-            title="Distribución de Costos por Servicio (mensual)"
-            data={chartData}
-            valuePrefix="$"
-            orientation="vertical"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <DollarSign size={36} className="text-textSec mb-3 opacity-50" />
-            <p className="text-sm font-semibold text-textMain">Sin estimaciones de costo</p>
-            <p className="text-xs text-textSec mt-1">
-              Añade un servicio abajo para ver la distribución en el gráfico.
-            </p>
-          </div>
-        )}
       </div>
 
       <form

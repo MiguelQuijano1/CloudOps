@@ -67,10 +67,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? 'bg-primary text-white shadow-md shadow-blue-900/30'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                  `relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
+                    ? 'bg-primary text-white shadow-md shadow-blue-900/30'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                   }`
                 }
               >
@@ -81,8 +80,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 text-[11px] text-slate-500 text-center">
-          Cloud Foundations – Semanas 5 y 6
+        <div className="p-4 border-t border-slate-800 space-y-3">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                SLA Mensual
+              </span>
+              <span className="text-xs font-bold text-security">99.98%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div className="h-full bg-security rounded-full" style={{ width: '99.98%' }} />
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500 text-center">
+            Cloud Foundations – Semanas 5 y 6
+          </p>
         </div>
       </aside>
     </>

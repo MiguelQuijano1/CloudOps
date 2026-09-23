@@ -1,14 +1,51 @@
 import React from 'react';
 import { MOCK_SECURITY_CHECKS } from '../data/awsServices';
 import { SecurityCard } from '../components/SecurityCard';
-import { ShieldCheck, Lock } from 'lucide-react';
+import { PageHeader } from '../components/PageHeader';
+import { MiniStat } from '../components/MiniStat';
+import { ShieldCheck, Lock, KeyRound, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export const SecurityView: React.FC = () => {
+  const total = MOCK_SECURITY_CHECKS.length;
+  const correct = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'correct').length;
+  const issues = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'issue').length;
+  const reviews = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'review').length;
+  const score = Math.round((correct / total) * 100);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-textMain">Seguridad e IAM</h1>
-        <p className="text-textSec text-sm">Modelo de responsabilidad compartida y control de accesos.</p>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        eyebrow="AWS Cloud Foundations · CIS AWS Foundations Benchmark v2.0"
+        title="Seguridad, Identidad y Cumplimiento"
+        description="Modelo de responsabilidad compartida, IAM y auditoría continua de la postura de seguridad."
+        badge={{
+          label: issues > 0 ? 'Postura: Requiere Atención' : 'Postura: Cumplimiento Alto',
+          tone: issues > 0 ? 'alerts' : 'security',
+        }}
+        actions={
+          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+            <ShieldCheck size={16} /> Auditar Políticas IAM
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <MiniStat
+          label="Well-Architected Score"
+          value={`${score}/100`}
+          icon={ShieldCheck}
+          tone={score >= 80 ? 'security' : 'costs'}
+          footnote={`${correct} de ${total} controles aprobados`}
+        />
+        <MiniStat label="Cargas Protegidas" value="100%" icon={KeyRound} tone="security" footnote="Cifrado KMS en producción" />
+        <MiniStat label="Estado IAM Root" value="MFA Forzado" icon={Lock} tone="security" footnote="Cuenta root asegurada" />
+        <MiniStat
+          label="Alertas de Seguridad"
+          value={`${issues + reviews}`}
+          icon={issues > 0 ? ShieldAlert : AlertTriangle}
+          tone={issues > 0 ? 'alerts' : 'costs'}
+          footnote={`${issues} crítica(s) · ${reviews} en revisión`}
+        />
       </div>
 
       {/* Modelo de Responsabilidad Compartida */}
