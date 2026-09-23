@@ -6,6 +6,15 @@ export interface AWSService {
   mainFunction: string;
   status: 'Active' | 'Planned' | 'Inactive';
   monthlyCost: number;
+  /** Ficha técnica real del recurso (tipo de instancia, engine, capacidad). */
+  spec?: {
+    instanceType?: string;
+    vCPU?: number;
+    ramGB?: number;
+    engine?: string;
+    storageGB?: number;
+    iops?: number;
+  };
 }
 
 export interface CloudPlan {
@@ -27,6 +36,11 @@ export interface RegionInfo {
   location: string;
   deployedServicesCount: number;
   status: 'Operational' | 'Degraded' | 'Maintenance';
+  /** Coordenadas geográficas aproximadas del datacenter, usadas por el mapa global. */
+  lat: number;
+  lon: number;
+  /** true si esta región actúa como hub primario (origen de las líneas de backbone). */
+  isHub?: boolean;
 }
 
 export interface SecurityItem {

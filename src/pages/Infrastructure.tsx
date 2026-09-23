@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MOCK_REGIONS, INITIAL_SERVICES } from '../data/awsServices';
 import { RegionCard } from '../components/RegionCard';
+import { WorldMap } from '../components/WorldMap';
 import { RegionDetailModal } from '../components/RegionDetailModal';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
@@ -58,6 +59,8 @@ export const InfrastructureView: React.FC = () => {
         <MiniStat label="Backbone Direct Connect" value="10 Gbps" icon={Cable} tone="neutral" footnote="Capacidad 100%" />
       </div>
 
+      <WorldMap regions={MOCK_REGIONS} selectedRegionId={selectedRegion} onRegionClick={handleRegionClick} />
+
       <div>
         <h2 className="text-base font-bold text-textMain">Regiones Desplegadas</h2>
         <p className="text-xs text-textSec mt-0.5 mb-4">
@@ -73,8 +76,8 @@ export const InfrastructureView: React.FC = () => {
             type="button"
             onClick={() => handleRegionClick(region)}
             className={`text-left rounded-2xl transition-all ${selectedRegion === region.id
-                ? 'ring-2 ring-primary ring-offset-2 ring-offset-bgMain'
-                : ''
+              ? 'ring-2 ring-primary ring-offset-2 ring-offset-bgMain'
+              : ''
               } animate-fade-in stagger-${Math.min(i + 1, 4)}`}
           >
             <RegionCard region={region} />

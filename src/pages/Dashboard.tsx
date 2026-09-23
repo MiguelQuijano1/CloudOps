@@ -3,6 +3,8 @@ import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { BarChart } from '../components/BarChart';
 import { StatusBadge } from '../components/StatusBadge';
+import { CloudWatchMetrics } from '../components/CloudWatchMetrics';
+import { WellArchitectedScorecard } from '../components/WellArchitectedScorecard';
 import { MOCK_SECURITY_CHECKS, INITIAL_SERVICES, MOCK_REGIONS, INITIAL_COSTS } from '../data/awsServices';
 import {
   Server,
@@ -212,10 +214,10 @@ export const DashboardView: React.FC = () => {
           <StatusBadge status={usage.badgeStatus} />
           <span
             className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${inUse
-                ? 'bg-emerald-50 text-security border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800'
-                : regionInfo?.status === 'Maintenance'
-                  ? 'bg-red-50 text-alerts border-red-200 dark:bg-red-950/40 dark:border-red-800'
-                  : 'bg-slate-100 text-textSec border-borders dark:bg-slate-800'
+              ? 'bg-emerald-50 text-security border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800'
+              : regionInfo?.status === 'Maintenance'
+                ? 'bg-red-50 text-alerts border-red-200 dark:bg-red-950/40 dark:border-red-800'
+                : 'bg-slate-100 text-textSec border-borders dark:bg-slate-800'
               }`}
           >
             {usage.label}
@@ -305,6 +307,8 @@ export const DashboardView: React.FC = () => {
         </div>
       )}
 
+      <CloudWatchMetrics regionId={selectedRegion} degraded={regionInfo?.status === 'Maintenance'} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-cards border border-borders rounded-2xl p-6 shadow-xs animate-fade-in stagger-2">
           {chartData.length > 0 ? (
@@ -333,6 +337,62 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <WellArchitectedScorecard
+          securityScore={securityScore}
+          healthPercent={healthPercent}
+          degraded={regionInfo?.status === 'Maintenance'}
+        />
+
+        <div className="lg:col-span-2 bg-cards border border-borders rounded-2xl p-6 shadow-xs space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-textMain">Ficha Técnica de Recursos Activos</h2>
+            <p className="text-xs text-textSec mt-0.5">
+              Tipo de instancia, engine y capacidad provisionada por recurso en {selectedRegion}
+            </p>
+          </div>
+          {regionServices.length > 0 ? (
+            <div className="overflow-x-auto -mx-2">
+              <table className="w-full text-xs min-w-[560px]">
+                <thead>
+                  <tr className="text-left text-textSec uppercase tracking-wider text-[10px] border-b border-borders">
+                    <th className="font-semibold py-2 px-2">Recurso</th>
+                    <th className="font-semibold py-2 px-2">Tipo / Engine</th>
+                    <th className="font-semibold py-2 px-2 text-right">vCPU</th>
+                    <th className="font-semibold py-2 px-2 text-right">RAM</th>
+                    <th className="font-semibold py-2 px-2 text-right">Storage / IOPS</th>
+                    <th className="font-semibold py-2 px-2 text-right">Costo/mes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {regionServices.map((s) => (
+                    <tr key={s.id} className="border-b border-borders last:border-0 hover:bg-bgMain">
+                      <td className="py-2.5 px-2 font-bold text-textMain">{s.name}</td>
+                      <td className="py-2.5 px-2 text-textSec font-mono text-[11px]">
+                        {s.spec?.instanceType ?? s.spec?.engine ?? '—'}
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-textMain">{s.spec?.vCPU ?? '—'}</td>
+                      <td className="py-2.5 px-2 text-right text-textMain">
+                        {s.spec?.ramGB ? `${s.spec.ramGB} GB` : '—'}
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-textMain">
+                        {s.spec?.storageGB ? `${s.spec.storageGB} GB` : '—'}
+                        {s.spec?.iops ? ` · ${s.spec.iops} IOPS` : ''}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-bold text-costs">
+                        ${(s.monthlyCost * costFactor).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-textSec">No hay recursos desplegados en esta región.</p>
+          )}
+        </div>
+      </div>
+
       <div className="bg-cards border border-borders rounded-2xl p-6 shadow-xs space-y-5 animate-fade-in stagger-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -355,10 +415,10 @@ export const DashboardView: React.FC = () => {
               Salud:{' '}
               <span
                 className={`font-semibold ${healthPercent >= 70
-                    ? 'text-security'
-                    : healthPercent >= 40
-                      ? 'text-costs'
-                      : 'text-alerts'
+                  ? 'text-security'
+                  : healthPercent >= 40
+                    ? 'text-costs'
+                    : 'text-alerts'
                   }`}
               >
                 {healthPercent}%
@@ -386,8 +446,8 @@ export const DashboardView: React.FC = () => {
                   <div className="flex flex-col items-center gap-2 flex-1 min-w-[90px]">
                     <div
                       className={`w-full flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${isActive
-                          ? 'bg-bgMain border-borders hover:shadow-xs'
-                          : 'bg-bgMain/50 border-borders opacity-55'
+                        ? 'bg-bgMain border-borders hover:shadow-xs'
+                        : 'bg-bgMain/50 border-borders opacity-55'
                         }`}
                     >
                       <Icon

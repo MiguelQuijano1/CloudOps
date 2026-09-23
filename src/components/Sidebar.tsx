@@ -39,21 +39,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-white min-h-screen flex flex-col border-r border-slate-800 shrink-0
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-white min-h-screen flex flex-col shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.04)]
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static`}
       >
-        <div className="p-6 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-blue-500 rounded-xl text-white shadow-lg shadow-blue-900/40">
-              <Cloud size={22} />
-            </div>
-            <div>
-              <h1 className="font-bold text-base tracking-wide text-white leading-none">CloudOps</h1>
-              <span className="text-[11px] text-slate-400">Dashboard v1.0</span>
-            </div>
+        <div className="h-16 px-6 flex items-center gap-3 shrink-0">
+          <div className="p-2 bg-primary rounded-xl text-white shrink-0">
+            <Cloud size={20} />
           </div>
-          <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white p-1">
+          <div className="min-w-0">
+            <h1 className="text-[15px] font-semibold tracking-tight text-white leading-none truncate">CloudOps</h1>
+            <span className="text-[10px] font-semibold text-blue-300 uppercase tracking-wider">Enterprise</span>
+          </div>
+          <button onClick={onClose} className="lg:hidden ml-auto text-slate-400 hover:text-white p-1">
             <X size={20} />
           </button>
         </div>
@@ -67,9 +65,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
-                    ? 'bg-primary text-white shadow-md shadow-blue-900/30'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                  `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                    ? 'bg-primary text-white'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
                   }`
                 }
               >
