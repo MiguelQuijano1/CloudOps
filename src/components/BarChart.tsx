@@ -21,6 +21,35 @@ function truncateLabel(label: string, maxChars: number): string {
   return label.slice(0, Math.max(maxChars - 1, 4)) + '…';
 }
 
+/** Divide un texto en un máximo de `maxLines` líneas de hasta `maxCharsPerLine` caracteres, cortando por palabra. */
+function wrapDescription(text: string, maxCharsPerLine = 34, maxLines = 2): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+
+  // Si quedó texto sin usar, marcamos la última línea con "…"
+  const usedLength = lines.join(' ').length;
+  if (usedLength < text.length) {
+    const last = lines[lines.length - 1] ?? '';
+    lines[lines.length - 1] =
+      last.length > maxCharsPerLine - 1 ? last.slice(0, maxCharsPerLine - 1) + '…' : last + '…';
+  }
+
+  return lines;
+}
+
 export const BarChart: React.FC<BarChartProps> = ({
   data,
   title,
@@ -201,9 +230,11 @@ export const BarChart: React.FC<BarChartProps> = ({
       const tooltip = svg.append('g').attr('opacity', 0).style('pointer-events', 'none');
       tooltip
         .append('rect')
-        .attr('rx', 6)
+        .attr('rx', 8)
         .attr('fill', 'var(--color-sidebar)')
-        .attr('opacity', 0.97);
+        .attr('stroke', 'rgba(255,255,255,0.12)')
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.98);
       const tooltipTitle = tooltip
         .append('text')
         .attr('fill', '#fff')
@@ -211,14 +242,20 @@ export const BarChart: React.FC<BarChartProps> = ({
         .attr('font-weight', 700)
         .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('text-anchor', 'middle');
-      const tooltipDesc = tooltip
-        .append('text')
-        .attr('fill', '#fff')
-        .attr('font-size', 10)
-        .attr('font-weight', 400)
-        .attr('font-family', 'Inter, system-ui, sans-serif')
-        .attr('text-anchor', 'middle')
-        .attr('opacity', 0.85);
+      // Hasta 2 líneas de descripción, para no truncar el texto a la mitad de una palabra.
+      const tooltipDescLines = [0, 1].map(() =>
+        tooltip
+          .append('text')
+          .attr('fill', '#fff')
+          .attr('font-size', 10.5)
+          .attr('font-weight', 400)
+          .attr('font-family', 'Inter, system-ui, sans-serif')
+          .attr('text-anchor', 'middle')
+          .attr('opacity', 0.85)
+      );
+
+      const TOOLTIP_PAD_X = 14;
+      const TOOLTIP_MAX_W = 240;
 
       bars
         .on('mouseenter', function (_event, d) {
@@ -229,24 +266,35 @@ export const BarChart: React.FC<BarChartProps> = ({
           const [mx, my] = d3.pointer(event, svgEl);
           const titleLine = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
           const descRaw = getServiceDescription(d.label);
-          const descLine = descRaw && descRaw.length > 58 ? descRaw.slice(0, 57) + '…' : descRaw;
+          const descLines = descRaw ? wrapDescription(descRaw, 34, 2) : [];
+
           tooltipTitle.text(titleLine);
-          tooltipDesc.text(descLine ?? '');
+          tooltipDescLines.forEach((line, i) => line.text(descLines[i] ?? ''));
+
           const titleW = tooltipTitle.node()?.getComputedTextLength() ?? 60;
-          const descW = descLine ? tooltipDesc.node()?.getComputedTextLength() ?? 0 : 0;
-          const tw = Math.max(titleW, descW) + 20;
-          const th = descLine ? 44 : 28;
+          const descW = Math.max(
+            0,
+            ...tooltipDescLines.map((line, i) => (descLines[i] ? line.node()?.getComputedTextLength() ?? 0 : 0))
+          );
+          const tw = Math.min(Math.max(titleW, descW) + TOOLTIP_PAD_X * 2, TOOLTIP_MAX_W + TOOLTIP_PAD_X * 2);
+          const lineCount = descLines.length;
+          const th = 14 + 18 + lineCount * 15;
+
           let tx = mx - tw / 2;
           if (tx < 4) tx = 4;
           if (tx + tw > width - 4) tx = width - tw - 4;
-          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - th - 8})`);
+
+          // Si no cabe arriba del cursor, se muestra debajo para que no tape la fila superior.
+          let ty = my - th - 10;
+          if (ty < 4) ty = my + 14;
+
+          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${ty})`);
           tooltip.select('rect').attr('width', tw).attr('height', th).attr('x', 0).attr('y', 0);
-          if (descLine) {
-            tooltipTitle.attr('x', tw / 2).attr('y', 17);
-            tooltipDesc.attr('x', tw / 2).attr('y', 33);
-          } else {
-            tooltipTitle.attr('x', tw / 2).attr('y', th / 2 + 4);
-          }
+
+          tooltipTitle.attr('x', tw / 2).attr('y', 17);
+          tooltipDescLines.forEach((line, i) => {
+            line.attr('x', tw / 2).attr('y', 17 + 15 * (i + 1));
+          });
         })
         .on('mouseleave', function () {
           tooltip.attr('opacity', 0);
@@ -381,9 +429,11 @@ export const BarChart: React.FC<BarChartProps> = ({
       const tooltip = svg.append('g').attr('opacity', 0).style('pointer-events', 'none');
       tooltip
         .append('rect')
-        .attr('rx', 6)
+        .attr('rx', 8)
         .attr('fill', 'var(--color-sidebar)')
-        .attr('opacity', 0.97);
+        .attr('stroke', 'rgba(255,255,255,0.12)')
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.98);
       const tooltipTitle = tooltip
         .append('text')
         .attr('fill', '#fff')
@@ -391,14 +441,20 @@ export const BarChart: React.FC<BarChartProps> = ({
         .attr('font-weight', 700)
         .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('text-anchor', 'middle');
-      const tooltipDesc = tooltip
-        .append('text')
-        .attr('fill', '#fff')
-        .attr('font-size', 10)
-        .attr('font-weight', 400)
-        .attr('font-family', 'Inter, system-ui, sans-serif')
-        .attr('text-anchor', 'middle')
-        .attr('opacity', 0.85);
+      // Hasta 2 líneas de descripción, para no truncar el texto a la mitad de una palabra.
+      const tooltipDescLines = [0, 1].map(() =>
+        tooltip
+          .append('text')
+          .attr('fill', '#fff')
+          .attr('font-size', 10.5)
+          .attr('font-weight', 400)
+          .attr('font-family', 'Inter, system-ui, sans-serif')
+          .attr('text-anchor', 'middle')
+          .attr('opacity', 0.85)
+      );
+
+      const TOOLTIP_PAD_X = 14;
+      const TOOLTIP_MAX_W = 240;
 
       bars
         .on('mouseenter', function (_event, d) {
@@ -409,24 +465,35 @@ export const BarChart: React.FC<BarChartProps> = ({
           const [mx, my] = d3.pointer(event, svgEl);
           const titleLine = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
           const descRaw = getServiceDescription(d.label);
-          const descLine = descRaw && descRaw.length > 58 ? descRaw.slice(0, 57) + '…' : descRaw;
+          const descLines = descRaw ? wrapDescription(descRaw, 34, 2) : [];
+
           tooltipTitle.text(titleLine);
-          tooltipDesc.text(descLine ?? '');
+          tooltipDescLines.forEach((line, i) => line.text(descLines[i] ?? ''));
+
           const titleW = tooltipTitle.node()?.getComputedTextLength() ?? 60;
-          const descW = descLine ? tooltipDesc.node()?.getComputedTextLength() ?? 0 : 0;
-          const tw = Math.max(titleW, descW) + 20;
-          const th = descLine ? 44 : 28;
+          const descW = Math.max(
+            0,
+            ...tooltipDescLines.map((line, i) => (descLines[i] ? line.node()?.getComputedTextLength() ?? 0 : 0))
+          );
+          const tw = Math.min(Math.max(titleW, descW) + TOOLTIP_PAD_X * 2, TOOLTIP_MAX_W + TOOLTIP_PAD_X * 2);
+          const lineCount = descLines.length;
+          const th = 14 + 18 + lineCount * 15;
+
           let tx = mx - tw / 2;
           if (tx < 4) tx = 4;
           if (tx + tw > width - 4) tx = width - tw - 4;
-          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - th - 8})`);
+
+          // Si no cabe arriba del cursor, se muestra debajo para que no tape la fila superior.
+          let ty = my - th - 10;
+          if (ty < 4) ty = my + 14;
+
+          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${ty})`);
           tooltip.select('rect').attr('width', tw).attr('height', th).attr('x', 0).attr('y', 0);
-          if (descLine) {
-            tooltipTitle.attr('x', tw / 2).attr('y', 17);
-            tooltipDesc.attr('x', tw / 2).attr('y', 33);
-          } else {
-            tooltipTitle.attr('x', tw / 2).attr('y', th / 2 + 4);
-          }
+
+          tooltipTitle.attr('x', tw / 2).attr('y', 17);
+          tooltipDescLines.forEach((line, i) => {
+            line.attr('x', tw / 2).attr('y', 17 + 15 * (i + 1));
+          });
         })
         .on('mouseleave', function () {
           tooltip.attr('opacity', 0);

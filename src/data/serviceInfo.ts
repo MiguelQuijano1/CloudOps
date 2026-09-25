@@ -42,6 +42,12 @@ export const SERVICE_INFO: Record<string, string> = {
   'Optimización de Costos': 'Evitar gasto innecesario y lograr el mejor retorno sobre lo que inviertes en la nube.',
   Sostenibilidad: 'Minimizar el impacto ambiental de tus cargas de trabajo en la nube.',
 
+  // MiniStats de infraestructura
+  'Zonas de Disponibilidad': 'Centros de datos físicamente separados dentro de una región. Usarlos en conjunto da tolerancia a fallos.',
+  'Latencia Inter-AZ': 'Tiempo que tarda un dato en viajar entre Zonas de Disponibilidad. Cuanto más bajo, mejor sincronización entre réplicas.',
+  'Regiones Conectadas': 'Regiones AWS enlazadas a esta arquitectura (producción, disaster recovery y puntos de presencia de borde).',
+  'Backbone Direct Connect': 'Conexión de red dedicada y privada entre tu infraestructura on-premise y AWS, con mayor ancho de banda y menor latencia que Internet.',
+
   // MiniStats de seguridad
   'Well-Architected Score': 'Puntaje global calculado sobre los controles de seguridad evaluados (aprobados / total).',
   'Cargas Protegidas': 'Porcentaje de cargas de trabajo en producción que tienen cifrado KMS habilitado.',
