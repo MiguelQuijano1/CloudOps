@@ -1,5 +1,7 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
+import { getServiceDescription } from '../data/serviceInfo';
 
 interface MiniStatProps {
     label: string;
@@ -7,6 +9,8 @@ interface MiniStatProps {
     icon: LucideIcon;
     footnote?: string;
     tone?: 'primary' | 'security' | 'costs' | 'alerts' | 'neutral';
+    /** Texto de ayuda al pasar el mouse. Si se omite, se intenta buscar automáticamente por el label. */
+    tooltip?: string;
 }
 
 const TONE_CLASSES: Record<string, string> = {
@@ -23,15 +27,27 @@ export const MiniStat: React.FC<MiniStatProps> = ({
     icon: Icon,
     footnote,
     tone = 'primary',
-}) => (
-    <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs card-hover">
-        <div className="flex items-center justify-between mb-2">
-            <span className="text-textSec text-xs font-semibold uppercase tracking-wide">{label}</span>
-            <div className={`p-1.5 rounded-lg ${TONE_CLASSES[tone]}`}>
-                <Icon size={16} />
+    tooltip,
+}) => {
+    const helpText = tooltip ?? getServiceDescription(label);
+    return (
+        <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs card-hover">
+            <div className="flex items-center justify-between mb-2">
+                {helpText ? (
+                    <InfoTooltip text={helpText}>
+                        <span className="text-textSec text-xs font-semibold uppercase tracking-wide cursor-help">
+                            {label}
+                        </span>
+                    </InfoTooltip>
+                ) : (
+                    <span className="text-textSec text-xs font-semibold uppercase tracking-wide">{label}</span>
+                )}
+                <div className={`p-1.5 rounded-lg ${TONE_CLASSES[tone]}`}>
+                    <Icon size={16} />
+                </div>
             </div>
+            <p className="text-2xl font-bold text-textMain">{value}</p>
+            {footnote && <p className="text-xs text-textSec mt-1">{footnote}</p>}
         </div>
-        <p className="text-2xl font-bold text-textMain">{value}</p>
-        {footnote && <p className="text-xs text-textSec mt-1">{footnote}</p>}
-    </div>
-);
+    );
+};

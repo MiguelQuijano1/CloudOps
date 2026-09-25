@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { Activity, Cpu, ArrowDownUp, Timer, Database, AlertTriangle } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
+import { getServiceDescription } from '../data/serviceInfo';
 
 interface MetricDef {
     key: string;
@@ -110,15 +112,20 @@ export const CloudWatchMetrics: React.FC<CloudWatchMetricsProps> = ({ regionId, 
                     const prev = m.data[m.data.length - 2];
                     const delta = prev ? ((last - prev) / prev) * 100 : 0;
                     const path = sparklinePath(m.data, 140, 36);
+                    const description = getServiceDescription(m.label) ?? `Métrica de ${m.namespace}.`;
                     return (
                         <div key={m.key} className="p-4 rounded-xl border border-borders bg-bgMain">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <div className={`p-1.5 rounded-lg shrink-0 ${TONE_BG[m.tone]} ${TONE_TEXT[m.tone]}`}>
-                                        <Icon size={14} />
-                                    </div>
+                                    <InfoTooltip text={description}>
+                                        <div className={`p-1.5 rounded-lg shrink-0 cursor-help ${TONE_BG[m.tone]} ${TONE_TEXT[m.tone]}`}>
+                                            <Icon size={14} />
+                                        </div>
+                                    </InfoTooltip>
                                     <div className="min-w-0">
-                                        <p className="text-[11px] font-bold text-textMain truncate">{m.label}</p>
+                                        <InfoTooltip text={description} className="max-w-full">
+                                            <p className="text-[11px] font-bold text-textMain truncate cursor-help">{m.label}</p>
+                                        </InfoTooltip>
                                         <p className="text-[10px] text-textSec truncate">{m.namespace}</p>
                                     </div>
                                 </div>

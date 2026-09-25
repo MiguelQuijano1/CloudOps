@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as d3 from 'd3';
+import { getServiceDescription } from '../data/serviceInfo';
 
 interface BarChartItem {
   label: string;
@@ -201,17 +202,23 @@ export const BarChart: React.FC<BarChartProps> = ({
       tooltip
         .append('rect')
         .attr('rx', 6)
-        .attr('height', 28)
         .attr('fill', 'var(--color-sidebar)')
-        .attr('opacity', 0.96);
-      const tooltipText = tooltip
+        .attr('opacity', 0.97);
+      const tooltipTitle = tooltip
         .append('text')
         .attr('fill', '#fff')
         .attr('font-size', 12)
-        .attr('font-weight', 600)
+        .attr('font-weight', 700)
+        .attr('font-family', 'Inter, system-ui, sans-serif')
+        .attr('text-anchor', 'middle');
+      const tooltipDesc = tooltip
+        .append('text')
+        .attr('fill', '#fff')
+        .attr('font-size', 10)
+        .attr('font-weight', 400)
         .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('text-anchor', 'middle')
-        .attr('dy', '0.35em');
+        .attr('opacity', 0.85);
 
       bars
         .on('mouseenter', function (_event, d) {
@@ -220,15 +227,26 @@ export const BarChart: React.FC<BarChartProps> = ({
         })
         .on('mousemove', function (event, d) {
           const [mx, my] = d3.pointer(event, svgEl);
-          const label = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
-          tooltipText.text(label);
-          const tw = (tooltipText.node()?.getComputedTextLength() ?? 60) + 20;
+          const titleLine = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
+          const descRaw = getServiceDescription(d.label);
+          const descLine = descRaw && descRaw.length > 58 ? descRaw.slice(0, 57) + '…' : descRaw;
+          tooltipTitle.text(titleLine);
+          tooltipDesc.text(descLine ?? '');
+          const titleW = tooltipTitle.node()?.getComputedTextLength() ?? 60;
+          const descW = descLine ? tooltipDesc.node()?.getComputedTextLength() ?? 0 : 0;
+          const tw = Math.max(titleW, descW) + 20;
+          const th = descLine ? 44 : 28;
           let tx = mx - tw / 2;
           if (tx < 4) tx = 4;
           if (tx + tw > width - 4) tx = width - tw - 4;
-          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - 36})`);
-          tooltip.select('rect').attr('width', tw).attr('x', 0).attr('y', 0);
-          tooltipText.attr('x', tw / 2).attr('y', 14);
+          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - th - 8})`);
+          tooltip.select('rect').attr('width', tw).attr('height', th).attr('x', 0).attr('y', 0);
+          if (descLine) {
+            tooltipTitle.attr('x', tw / 2).attr('y', 17);
+            tooltipDesc.attr('x', tw / 2).attr('y', 33);
+          } else {
+            tooltipTitle.attr('x', tw / 2).attr('y', th / 2 + 4);
+          }
         })
         .on('mouseleave', function () {
           tooltip.attr('opacity', 0);
@@ -364,17 +382,23 @@ export const BarChart: React.FC<BarChartProps> = ({
       tooltip
         .append('rect')
         .attr('rx', 6)
-        .attr('height', 28)
         .attr('fill', 'var(--color-sidebar)')
-        .attr('opacity', 0.96);
-      const tooltipText = tooltip
+        .attr('opacity', 0.97);
+      const tooltipTitle = tooltip
         .append('text')
         .attr('fill', '#fff')
         .attr('font-size', 12)
-        .attr('font-weight', 600)
+        .attr('font-weight', 700)
+        .attr('font-family', 'Inter, system-ui, sans-serif')
+        .attr('text-anchor', 'middle');
+      const tooltipDesc = tooltip
+        .append('text')
+        .attr('fill', '#fff')
+        .attr('font-size', 10)
+        .attr('font-weight', 400)
         .attr('font-family', 'Inter, system-ui, sans-serif')
         .attr('text-anchor', 'middle')
-        .attr('dy', '0.35em');
+        .attr('opacity', 0.85);
 
       bars
         .on('mouseenter', function (_event, d) {
@@ -383,15 +407,26 @@ export const BarChart: React.FC<BarChartProps> = ({
         })
         .on('mousemove', function (event, d) {
           const [mx, my] = d3.pointer(event, svgEl);
-          const label = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
-          tooltipText.text(label);
-          const tw = (tooltipText.node()?.getComputedTextLength() ?? 60) + 20;
+          const titleLine = `${d.label}: ${valuePrefix}${d.value.toFixed(2)}`;
+          const descRaw = getServiceDescription(d.label);
+          const descLine = descRaw && descRaw.length > 58 ? descRaw.slice(0, 57) + '…' : descRaw;
+          tooltipTitle.text(titleLine);
+          tooltipDesc.text(descLine ?? '');
+          const titleW = tooltipTitle.node()?.getComputedTextLength() ?? 60;
+          const descW = descLine ? tooltipDesc.node()?.getComputedTextLength() ?? 0 : 0;
+          const tw = Math.max(titleW, descW) + 20;
+          const th = descLine ? 44 : 28;
           let tx = mx - tw / 2;
           if (tx < 4) tx = 4;
           if (tx + tw > width - 4) tx = width - tw - 4;
-          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - 36})`);
-          tooltip.select('rect').attr('width', tw).attr('x', 0).attr('y', 0);
-          tooltipText.attr('x', tw / 2).attr('y', 14);
+          tooltip.attr('opacity', 1).attr('transform', `translate(${tx},${my - th - 8})`);
+          tooltip.select('rect').attr('width', tw).attr('height', th).attr('x', 0).attr('y', 0);
+          if (descLine) {
+            tooltipTitle.attr('x', tw / 2).attr('y', 17);
+            tooltipDesc.attr('x', tw / 2).attr('y', 33);
+          } else {
+            tooltipTitle.attr('x', tw / 2).attr('y', th / 2 + 4);
+          }
         })
         .on('mouseleave', function () {
           tooltip.attr('opacity', 0);

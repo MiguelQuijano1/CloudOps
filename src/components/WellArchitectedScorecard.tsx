@@ -1,5 +1,7 @@
 import React from 'react';
 import { Settings2, ShieldCheck, LifeBuoy, Gauge, DollarSign, Leaf } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
+import { getServiceDescription } from '../data/serviceInfo';
 
 interface Pillar {
     key: string;
@@ -49,15 +51,18 @@ export const WellArchitectedScorecard: React.FC<WellArchitectedScorecardProps> =
             <div className="space-y-3">
                 {pillars.map((p) => {
                     const Icon = p.icon;
+                    const helpText = getServiceDescription(p.label) ?? p.label;
                     return (
-                        <div key={p.key} className="flex items-center gap-3">
-                            <Icon size={15} className="text-textSec shrink-0" />
-                            <span className="text-xs font-semibold text-textMain w-44 shrink-0 truncate">{p.label}</span>
-                            <div className="flex-1 h-1.5 rounded-full bg-borders overflow-hidden">
-                                <div className={`h-full rounded-full ${barColor(p.score)}`} style={{ width: `${p.score}%` }} />
+                        <InfoTooltip key={p.key} text={helpText} className="w-full">
+                            <div className="flex items-center gap-3 cursor-help">
+                                <Icon size={15} className="text-textSec shrink-0" />
+                                <span className="text-xs font-semibold text-textMain w-44 shrink-0 truncate">{p.label}</span>
+                                <div className="flex-1 h-1.5 rounded-full bg-borders overflow-hidden">
+                                    <div className={`h-full rounded-full ${barColor(p.score)}`} style={{ width: `${p.score}%` }} />
+                                </div>
+                                <span className={`text-xs font-bold w-9 text-right shrink-0 ${textColor(p.score)}`}>{p.score}</span>
                             </div>
-                            <span className={`text-xs font-bold w-9 text-right shrink-0 ${textColor(p.score)}`}>{p.score}</span>
-                        </div>
+                        </InfoTooltip>
                     );
                 })}
             </div>

@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
+import { InfoTooltip } from '../components/InfoTooltip';
+import { getServiceDescription } from '../data/serviceInfo';
 
 interface FlowNode {
   id: string;
@@ -170,6 +172,7 @@ export const NetworkView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveNodeId(node.id)}
+                    title={node.detail}
                     className={`flex-1 flex flex-col items-center gap-1.5 p-4 rounded-xl border text-center transition-all ${isActive
                         ? 'bg-primary/10 border-primary shadow-xs'
                         : 'bg-bgMain border-borders hover:border-primary/40'
@@ -220,20 +223,22 @@ export const NetworkView: React.FC = () => {
               {PUBLIC_RESOURCES.map((res) => {
                 const Icon = res.icon;
                 const isSelected = selectedResource.id === res.id;
+                const helpText = getServiceDescription(res.name) ?? res.subtitle;
                 return (
-                  <button
-                    key={res.id}
-                    type="button"
-                    onClick={() => setSelectedResource(res)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${isSelected ? 'bg-primary/10 border-primary' : 'bg-bgMain border-borders hover:border-primary/40'
-                      }`}
-                  >
-                    <Icon className="text-primary shrink-0" size={18} />
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-textMain block truncate">{res.name}</span>
-                      <span className="text-[10px] text-textSec block truncate">{res.subtitle}</span>
-                    </div>
-                  </button>
+                  <InfoTooltip key={res.id} text={helpText} className="w-full">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedResource(res)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${isSelected ? 'bg-primary/10 border-primary' : 'bg-bgMain border-borders hover:border-primary/40'
+                        }`}
+                    >
+                      <Icon className="text-primary shrink-0" size={18} />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-textMain block truncate">{res.name}</span>
+                        <span className="text-[10px] text-textSec block truncate">{res.subtitle}</span>
+                      </div>
+                    </button>
+                  </InfoTooltip>
                 );
               })}
             </div>
@@ -250,32 +255,36 @@ export const NetworkView: React.FC = () => {
               {PRIVATE_RESOURCES.map((res) => {
                 const Icon = res.icon;
                 const isSelected = selectedResource.id === res.id;
+                const helpText = getServiceDescription(res.name) ?? res.subtitle;
                 return (
-                  <button
-                    key={res.id}
-                    type="button"
-                    onClick={() => setSelectedResource(res)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${isSelected ? 'bg-primary/10 border-primary' : 'bg-bgMain border-borders hover:border-primary/40'
-                      }`}
-                  >
-                    <Icon className="text-primary shrink-0" size={18} />
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-textMain block truncate">{res.name}</span>
-                      <span className="text-[10px] text-textSec block truncate">{res.subtitle}</span>
-                    </div>
-                  </button>
+                  <InfoTooltip key={res.id} text={helpText} className="w-full">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedResource(res)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-colors ${isSelected ? 'bg-primary/10 border-primary' : 'bg-bgMain border-borders hover:border-primary/40'
+                        }`}
+                    >
+                      <Icon className="text-primary shrink-0" size={18} />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-textMain block truncate">{res.name}</span>
+                        <span className="text-[10px] text-textSec block truncate">{res.subtitle}</span>
+                      </div>
+                    </button>
+                  </InfoTooltip>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-3 border-t border-borders">
-            <Lock className="text-costs shrink-0" size={16} />
-            <span className="text-[11px] text-textSec">
-              <strong className="text-textMain">IAM</strong> — roles y políticas para EC2, RDS, S3 y CloudFront (sin
-              claves embebidas en código)
-            </span>
-          </div>
+          <InfoTooltip text={getServiceDescription('IAM') ?? ''} className="w-full">
+            <div className="flex items-center gap-3 pt-3 border-t border-borders cursor-help">
+              <Lock className="text-costs shrink-0" size={16} />
+              <span className="text-[11px] text-textSec">
+                <strong className="text-textMain">IAM</strong> — roles y políticas para EC2, RDS, S3 y CloudFront (sin
+                claves embebidas en código)
+              </span>
+            </div>
+          </InfoTooltip>
         </div>
 
         {/* Panel de detalle del recurso seleccionado */}

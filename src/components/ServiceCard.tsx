@@ -1,6 +1,8 @@
 import React from 'react';
 import { Server, ChevronRight, Activity } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { InfoTooltip } from './InfoTooltip';
+import { getServiceDescription } from '../data/serviceInfo';
 import type { AWSService } from '../types';
 
 interface ServiceCardProps {
@@ -28,7 +30,10 @@ const METRIC_MAP: Record<string, string> = {
   CloudFront: 'Cache Hit Rate: 94.2%',
 };
 
-export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onClick }) => (
+export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onClick }) => {
+  const helpText = getServiceDescription(service.name) ?? service.description;
+
+  return (
   <button
     type="button"
     onClick={onClick}
@@ -36,11 +41,15 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onClick }) =>
   >
     <div className="flex items-start justify-between gap-2">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-primary flex items-center justify-center shrink-0">
-          <Server size={20} />
-        </div>
+        <InfoTooltip text={helpText} className="shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-primary flex items-center justify-center shrink-0">
+            <Server size={20} />
+          </div>
+        </InfoTooltip>
         <div className="min-w-0">
-          <h3 className="font-bold text-textMain text-base leading-tight truncate">{service.name}</h3>
+          <InfoTooltip text={helpText} className="max-w-full">
+            <h3 className="font-bold text-textMain text-base leading-tight truncate">{service.name}</h3>
+          </InfoTooltip>
           <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
             {service.category}
           </span>
@@ -84,4 +93,5 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onClick }) =>
       </span>
     </div>
   </button>
-);
+  );
+};
