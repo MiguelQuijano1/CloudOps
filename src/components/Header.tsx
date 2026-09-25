@@ -14,7 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const notifRef = useRef<HTMLDivElement>(null);
 
   return (
-    <header className="bg-cards/90 backdrop-blur-xl border-b border-borders h-16 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-20 transition-colors duration-250">
+    <header className="bg-cards/90 backdrop-blur-xl border-b border-borders h-16 px-4 sm:px-8 flex items-center justify-between shrink-0 z-20 transition-colors duration-250">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}

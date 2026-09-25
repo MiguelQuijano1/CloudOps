@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-white min-h-screen flex flex-col shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.04)]
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-sidebar text-white h-full flex flex-col shrink-0 shadow-[0_1px_8px_rgba(0,0,0,0.04)]
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static`}
       >

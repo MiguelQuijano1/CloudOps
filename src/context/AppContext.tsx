@@ -11,6 +11,12 @@ export interface NotificationItem {
   createdAt: string;
 }
 
+export interface ToastItem {
+  id: string;
+  title: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+}
+
 interface AppContextValue {
   theme: Theme;
   toggleTheme: () => void;
@@ -22,6 +28,8 @@ interface AppContextValue {
   markAllAsRead: () => void;
   addNotification: (n: Omit<NotificationItem, 'id' | 'read' | 'createdAt'>) => void;
   clearNotifications: () => void;
+  toasts: ToastItem[];
+  dismissToast: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -75,6 +83,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEFAULT_NOTIFICATIONS;
   });
 
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('cloudops_theme', theme);
@@ -115,8 +129,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: new Date().toISOString(),
       };
       setNotifications((prev) => [item, ...prev]);
+
+      const toastId = `toast-${item.id}`;
+      setToasts((prev) => [...prev, { id: toastId, title: item.title, type: item.type }]);
+      window.setTimeout(() => dismissToast(toastId), 4000);
     },
-    []
+    [dismissToast]
   );
 
   const clearNotifications = useCallback(() => {
@@ -138,6 +156,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markAllAsRead,
         addNotification,
         clearNotifications,
+        toasts,
+        dismissToast,
       }}
     >
       {children}

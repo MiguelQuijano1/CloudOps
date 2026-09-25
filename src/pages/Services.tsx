@@ -4,8 +4,9 @@ import { ServiceCard } from '../components/ServiceCard';
 import { ServiceDetailModal } from '../components/ServiceDetailModal';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
-import { Search, Gift, Link2, Gauge, Globe, ShieldCheck } from 'lucide-react';
+import { Search, Gift, Link2, Gauge, Globe, ShieldCheck, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { exportCsvReport } from '../utils/exportCsv';
 import type { AWSService } from '../types';
 
 const FREE_TIER = [
@@ -36,7 +37,7 @@ const FREE_TIER = [
 ];
 
 export const ServicesView: React.FC = () => {
-  const { selectedRegion } = useApp();
+  const { selectedRegion, addNotification } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [selectedService, setSelectedService] = useState<AWSService | null>(null);
@@ -51,6 +52,30 @@ export const ServicesView: React.FC = () => {
 
   const activeCount = INITIAL_SERVICES.filter((s) => s.status === 'Active').length;
 
+  const exportCatalog = () => {
+    exportCsvReport({
+      title: 'Catálogo de Servicios AWS Desplegados',
+      slug: 'servicios',
+      regionId: selectedRegion,
+      columns: ['Servicio', 'Categoría', 'Estado', 'Descripción'],
+      rows: filteredServices.map((s) => [s.name, s.category, s.status, s.description]),
+      totals: [['Total filtrado', filteredServices.length], ['Total catálogo', INITIAL_SERVICES.length]],
+    });
+    addNotification({
+      title: 'Catálogo exportado',
+      message: `Se descargó el CSV con ${filteredServices.length} servicio(s) para ${selectedRegion}.`,
+      type: 'success',
+    });
+  };
+
+  const linkToProposal = () => {
+    addNotification({
+      title: 'Servicios vinculados',
+      message: `${filteredServices.length} servicio(s) vinculado(s) a la propuesta de planificación.`,
+      type: 'info',
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader
@@ -59,9 +84,20 @@ export const ServicesView: React.FC = () => {
         description="Inventario integral de recursos de nube aprovisionados y auditados en la arquitectura propuesta."
         badge={{ label: `${activeCount} de ${INITIAL_SERVICES.length} Desplegados y Operativos`, tone: 'security' }}
         actions={
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-            <Link2 size={16} /> Vincular a Propuesta
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={exportCatalog}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-cards border border-borders text-textMain rounded-xl text-sm font-semibold hover:bg-bgMain transition-colors"
+            >
+              <Download size={16} /> Exportar CSV
+            </button>
+            <button
+              onClick={linkToProposal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors"
+            >
+              <Link2 size={16} /> Vincular a Propuesta
+            </button>
+          </div>
         }
       />
 
@@ -89,8 +125,8 @@ export const ServicesView: React.FC = () => {
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${categoryFilter === cat
-                  ? 'bg-primary text-white'
-                  : 'bg-cards text-textSec border border-borders hover:bg-bgMain'
+                ? 'bg-primary text-white'
+                : 'bg-cards text-textSec border border-borders hover:bg-bgMain'
                 }`}
             >
               {cat}

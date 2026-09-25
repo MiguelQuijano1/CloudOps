@@ -66,8 +66,8 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                 </div>
             </div>
 
-            <div className="relative w-full max-h-[300px] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
-                <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="w-full h-auto max-h-[300px] block mx-auto" role="img" aria-label="Mapa global de regiones desplegadas">
+            <div className="relative w-full aspect-[1000/380] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="w-full h-full block" role="img" aria-label="Mapa global de regiones desplegadas">
                     <defs>
                         <pattern id={dotGridId} width="7" height="7" patternUnits="userSpaceOnUse">
                             <circle cx="1.1" cy="1.1" r="1.1" fill="#2E4269" />

@@ -1,16 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MOCK_SECURITY_CHECKS } from '../data/awsServices';
 import { SecurityCard } from '../components/SecurityCard';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
-import { ShieldCheck, Lock, KeyRound, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, Lock, KeyRound, AlertTriangle, ShieldAlert, Download, Loader2 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { exportCsvReport } from '../utils/exportCsv';
 
 export const SecurityView: React.FC = () => {
+  const { selectedRegion, addNotification } = useApp();
+  const [auditing, setAuditing] = useState(false);
   const total = MOCK_SECURITY_CHECKS.length;
   const correct = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'correct').length;
   const issues = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'issue').length;
   const reviews = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'review').length;
   const score = Math.round((correct / total) * 100);
+
+  const runAudit = () => {
+    setAuditing(true);
+    window.setTimeout(() => {
+      setAuditing(false);
+      addNotification({
+        title: 'Auditoría IAM completada',
+        message:
+          issues > 0
+            ? `Se detectaron ${issues} hallazgo(s) crítico(s) en políticas IAM. Revisa el panel de abajo.`
+            : 'No se encontraron políticas IAM sobre-permisivas en esta pasada.',
+        type: issues > 0 ? 'warning' : 'success',
+      });
+    }, 1200);
+  };
+
+  const exportReport = () => {
+    exportCsvReport({
+      title: 'Reporte de Seguridad, Identidad y Cumplimiento',
+      slug: 'seguridad',
+      regionId: selectedRegion,
+      columns: ['Control', 'Estado', 'Detalle'],
+      rows: MOCK_SECURITY_CHECKS.map((c) => [c.title, c.status, c.description]),
+      totals: [
+        ['Well-Architected Score', `${score}/100`],
+        ['Controles aprobados', `${correct} / ${total}`],
+        ['Críticos', issues],
+        ['En revisión', reviews],
+      ],
+    });
+    addNotification({
+      title: 'Reporte exportado',
+      message: `Se descargó el reporte CSV de seguridad para ${selectedRegion}.`,
+      type: 'success',
+    });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -23,9 +63,22 @@ export const SecurityView: React.FC = () => {
           tone: issues > 0 ? 'alerts' : 'security',
         }}
         actions={
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-            <ShieldCheck size={16} /> Auditar Políticas IAM
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={exportReport}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-cards border border-borders text-textMain rounded-xl text-sm font-semibold hover:bg-bgMain transition-colors"
+            >
+              <Download size={16} /> Exportar CSV
+            </button>
+            <button
+              onClick={runAudit}
+              disabled={auditing}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
+            >
+              {auditing ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+              {auditing ? 'Auditando…' : 'Auditar Políticas IAM'}
+            </button>
+          </div>
         }
       />
 

@@ -8,6 +8,7 @@ import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
 import { DollarSign, Plus, Download, TrendingDown, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { exportCsvReport } from '../utils/exportCsv';
 
 const BAR_COLORS = [
   'var(--color-primary)',
@@ -95,27 +96,24 @@ export const CostsView: React.FC = () => {
     }));
 
   const exportReport = () => {
-    const lines = [
-      'CloudOps – Reporte de Costos',
-      `Región: ${selectedRegion}`,
-      `Fecha: ${new Date().toLocaleString()}`,
-      '',
-      'Servicio,Cantidad,Horas/Mes,Costo/Hora,Mensual,Anual',
-      ...costs.map(
-        (c) =>
-          `"${c.serviceName}",${c.quantity},${c.hoursPerMonth},${c.costPerHour},${c.monthlyCost.toFixed(2)},${c.annualCost.toFixed(2)}`
-      ),
-      '',
-      `Total Mensual,$${totalMonthly.toFixed(2)}`,
-      `Total Anual,$${totalAnnual.toFixed(2)}`,
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cloudops-costos-${selectedRegion}-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportCsvReport({
+      title: 'CloudOps – Reporte de Costos',
+      slug: 'costos',
+      regionId: selectedRegion,
+      columns: ['Servicio', 'Cantidad', 'Horas/Mes', 'Costo/Hora', 'Mensual', 'Anual'],
+      rows: costs.map((c) => [
+        c.serviceName,
+        c.quantity,
+        c.hoursPerMonth,
+        c.costPerHour,
+        c.monthlyCost.toFixed(2),
+        c.annualCost.toFixed(2),
+      ]),
+      totals: [
+        ['Total Mensual', `$${totalMonthly.toFixed(2)}`],
+        ['Total Anual', `$${totalAnnual.toFixed(2)}`],
+      ],
+    });
     addNotification({
       title: 'Reporte exportado',
       message: `Se descargó el reporte CSV de costos para ${selectedRegion}.`,
