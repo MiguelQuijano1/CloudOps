@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { RegionInfo } from '../types';
+import { WORLD_LAND_PATH_D } from '../data/worldLandPath';
 
 interface WorldMapProps {
     regions: RegionInfo[];
@@ -10,35 +11,18 @@ interface WorldMapProps {
 const VIEW_W = 1000;
 const VIEW_H = 440;
 
-/** Proyección equirectangular simple: lat/lon -> coordenadas del viewBox. */
+// Recorte de latitud: se excluye la Antártida (y casi todo el círculo polar ártico)
+// para no desperdiciar espacio vertical con zonas vacías. Debe coincidir exactamente
+// con el recorte usado al generar WORLD_LAND_PATH_D (ver src/data/worldLandPath.ts).
+const LAT_MAX = 80;
+const LAT_MIN = -60;
+
+/** Proyección equirectangular recortada: lat/lon -> coordenadas del viewBox. */
 function project(lat: number, lon: number) {
     const x = ((lon + 180) / 360) * VIEW_W;
-    const y = ((90 - lat) / 180) * VIEW_H;
+    const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VIEW_H;
     return { x, y };
 }
-
-/** Siluetas continentales simplificadas (estilo low-poly / dot-matrix), definidas por centro
- *  lat/lon aproximado y tamaño en grados, proyectadas dinámicamente para escalar con cualquier
- *  VIEW_H. Se incluyen masas menores (Groenlandia, Japón, India, Madagascar, Nueva Zelanda...)
- *  para que el mapa se perciba completo y no solo como 4 manchas grandes. */
-const CONTINENT_DEFS: { lat: number; lon: number; rxDeg: number; ryDeg: number; rotate?: number }[] = [
-    { lat: 63, lon: -155, rxDeg: 15, ryDeg: 11 }, // Alaska
-    { lat: 45, lon: -100, rxDeg: 46, ryDeg: 30, rotate: -8 }, // Norteamérica
-    { lat: 72, lon: -42, rxDeg: 11, ryDeg: 13 }, // Groenlandia
-    { lat: 20, lon: -90, rxDeg: 10, ryDeg: 12 }, // Centroamérica
-    { lat: -18, lon: -60, rxDeg: 21, ryDeg: 40, rotate: 8 }, // Sudamérica
-    { lat: 54, lon: -4, rxDeg: 5, ryDeg: 6 }, // Reino Unido / Irlanda
-    { lat: 61, lon: 16, rxDeg: 8, ryDeg: 11 }, // Escandinavia
-    { lat: 48, lon: 15, rxDeg: 18, ryDeg: 12 }, // Europa
-    { lat: 3, lon: 20, rxDeg: 26, ryDeg: 41 }, // África
-    { lat: -20, lon: 47, rxDeg: 3, ryDeg: 6 }, // Madagascar
-    { lat: 22, lon: 45, rxDeg: 14, ryDeg: 11 }, // Medio Oriente
-    { lat: 24, lon: 79, rxDeg: 13, ryDeg: 13 }, // India
-    { lat: 48, lon: 100, rxDeg: 60, ryDeg: 34 }, // Asia
-    { lat: 37, lon: 138, rxDeg: 4, ryDeg: 9, rotate: 20 }, // Japón
-    { lat: -25, lon: 135, rxDeg: 21, ryDeg: 13 }, // Oceanía / Australia
-    { lat: -41, lon: 174, rxDeg: 3, ryDeg: 6 }, // Nueva Zelanda
-];
 
 const STATUS_COLOR: Record<RegionInfo['status'], string> = {
     Operational: '#16A34A',
@@ -51,12 +35,6 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
 
     const hub = useMemo(() => regions.find((r) => r.isHub) ?? regions[0], [regions]);
     const hubPos = hub ? project(hub.lat, hub.lon) : null;
-
-    const dotGridId = 'worldmap-dot-grid';
-
-    // Líneas de graticula (meridianos/paralelos) muy tenues para reforzar la sensación de "mapa completo".
-    const graticuleLons = useMemo(() => Array.from({ length: 7 }, (_, i) => -180 + i * 60), []);
-    const graticuleLats = useMemo(() => [-60, -30, 0, 30, 60], []);
 
     return (
         <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs">
@@ -83,49 +61,34 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
             <div className="relative w-full aspect-[1000/440] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
                 <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="w-full h-full block" role="img" aria-label="Mapa global de regiones desplegadas">
                     <defs>
-                        <pattern id={dotGridId} width="7" height="7" patternUnits="userSpaceOnUse">
-                            <circle cx="1.1" cy="1.1" r="1.1" fill="#2E4269" />
-                        </pattern>
                         <radialGradient id="mapGlow" cx="50%" cy="35%" r="85%">
-                            <stop offset="0%" stopColor="#0F1E3D" />
-                            <stop offset="100%" stopColor="#060B18" />
+                            <stop offset="0%" stopColor="#0B1830" />
+                            <stop offset="100%" stopColor="#050B18" />
                         </radialGradient>
+                        {/* Degradado tipo "globo iluminado" para el relleno de los continentes,
+                            más claro arriba-izquierda (simulando luz) y más oscuro/azulado hacia abajo. */}
+                        <linearGradient id="landGradient" x1="0%" y1="0%" x2="55%" y2="100%">
+                            <stop offset="0%" stopColor="#6FA3C4" />
+                            <stop offset="45%" stopColor="#4C87AC" />
+                            <stop offset="100%" stopColor="#2F6486" />
+                        </linearGradient>
+                        <filter id="landShadow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000814" floodOpacity="0.45" />
+                        </filter>
                     </defs>
 
                     <rect x="0" y="0" width={VIEW_W} height={VIEW_H} fill="url(#mapGlow)" />
 
-                    {/* Graticula: meridianos y paralelos de referencia, muy tenues */}
-                    <g stroke="#1E2E4E" strokeWidth="0.6" opacity="0.55">
-                        {graticuleLons.map((lon) => {
-                            const p = project(0, lon);
-                            return <line key={`m-${lon}`} x1={p.x} y1="0" x2={p.x} y2={VIEW_H} />;
-                        })}
-                        {graticuleLats.map((lat) => {
-                            const p = project(lat, 0);
-                            return <line key={`p-${lat}`} x1="0" y1={p.y} x2={VIEW_W} y2={p.y} />;
-                        })}
-                        <line x1="0" y1={VIEW_H / 2} x2={VIEW_W} y2={VIEW_H / 2} stroke="#2E4269" strokeWidth="0.9" />
-                    </g>
-
-                    {/* Continentes estilizados como retículas de puntos (silueta aproximada) */}
-                    <g opacity="0.9">
-                        {CONTINENT_DEFS.map((c, i) => {
-                            const center = project(c.lat, c.lon);
-                            const rx = (c.rxDeg / 360) * VIEW_W;
-                            const ry = (c.ryDeg / 180) * VIEW_H;
-                            return (
-                                <ellipse
-                                    key={i}
-                                    cx={center.x}
-                                    cy={center.y}
-                                    rx={rx}
-                                    ry={ry}
-                                    transform={c.rotate ? `rotate(${c.rotate} ${center.x} ${center.y})` : undefined}
-                                    fill={`url(#${dotGridId})`}
-                                />
-                            );
-                        })}
-                    </g>
+                    {/* Continentes con silueta geográfica real (land-110m, proyección equirectangular),
+                        con relleno degradado tipo globo iluminado y borde de costa sutil. */}
+                    <path
+                        d={WORLD_LAND_PATH_D}
+                        fill="url(#landGradient)"
+                        stroke="#8FC2DE"
+                        strokeOpacity="0.55"
+                        strokeWidth="0.7"
+                        filter="url(#landShadow)"
+                    />
 
                     {/* Líneas de backbone: hub -> cada región */}
                     {hubPos &&

@@ -52,13 +52,16 @@ body {
   min-height: 100svh;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
-  color: var(--color-textMain);
-  letter-spacing: -0.01em;
+@layer base {
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+    color: var(--color-textMain);
+    letter-spacing: -0.01em;
+  }
 }
 
 p {
