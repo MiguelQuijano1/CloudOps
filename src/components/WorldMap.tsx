@@ -8,7 +8,7 @@ interface WorldMapProps {
 }
 
 const VIEW_W = 1000;
-const VIEW_H = 380;
+const VIEW_H = 440;
 
 /** Proyección equirectangular simple: lat/lon -> coordenadas del viewBox. */
 function project(lat: number, lon: number) {
@@ -17,17 +17,27 @@ function project(lat: number, lon: number) {
     return { x, y };
 }
 
-/** Siluetas continentales simplificadas (estilo low-poly), definidas por centro lat/lon aproximado
- *  y tamaño en grados, proyectadas dinámicamente para que escalen con cualquier VIEW_H. */
+/** Siluetas continentales simplificadas (estilo low-poly / dot-matrix), definidas por centro
+ *  lat/lon aproximado y tamaño en grados, proyectadas dinámicamente para escalar con cualquier
+ *  VIEW_H. Se incluyen masas menores (Groenlandia, Japón, India, Madagascar, Nueva Zelanda...)
+ *  para que el mapa se perciba completo y no solo como 4 manchas grandes. */
 const CONTINENT_DEFS: { lat: number; lon: number; rxDeg: number; ryDeg: number; rotate?: number }[] = [
-    { lat: 45, lon: -100, rxDeg: 48, ryDeg: 32, rotate: -8 }, // Norteamérica
+    { lat: 63, lon: -155, rxDeg: 15, ryDeg: 11 }, // Alaska
+    { lat: 45, lon: -100, rxDeg: 46, ryDeg: 30, rotate: -8 }, // Norteamérica
+    { lat: 72, lon: -42, rxDeg: 11, ryDeg: 13 }, // Groenlandia
     { lat: 20, lon: -90, rxDeg: 10, ryDeg: 12 }, // Centroamérica
     { lat: -18, lon: -60, rxDeg: 21, ryDeg: 40, rotate: 8 }, // Sudamérica
-    { lat: 50, lon: 15, rxDeg: 20, ryDeg: 14 }, // Europa
+    { lat: 54, lon: -4, rxDeg: 5, ryDeg: 6 }, // Reino Unido / Irlanda
+    { lat: 61, lon: 16, rxDeg: 8, ryDeg: 11 }, // Escandinavia
+    { lat: 48, lon: 15, rxDeg: 18, ryDeg: 12 }, // Europa
     { lat: 3, lon: 20, rxDeg: 26, ryDeg: 41 }, // África
-    { lat: 45, lon: 95, rxDeg: 68, ryDeg: 39 }, // Asia
+    { lat: -20, lon: 47, rxDeg: 3, ryDeg: 6 }, // Madagascar
     { lat: 22, lon: 45, rxDeg: 14, ryDeg: 11 }, // Medio Oriente
-    { lat: -25, lon: 135, rxDeg: 21, ryDeg: 13 }, // Oceanía
+    { lat: 24, lon: 79, rxDeg: 13, ryDeg: 13 }, // India
+    { lat: 48, lon: 100, rxDeg: 60, ryDeg: 34 }, // Asia
+    { lat: 37, lon: 138, rxDeg: 4, ryDeg: 9, rotate: 20 }, // Japón
+    { lat: -25, lon: 135, rxDeg: 21, ryDeg: 13 }, // Oceanía / Australia
+    { lat: -41, lon: 174, rxDeg: 3, ryDeg: 6 }, // Nueva Zelanda
 ];
 
 const STATUS_COLOR: Record<RegionInfo['status'], string> = {
@@ -44,13 +54,17 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
 
     const dotGridId = 'worldmap-dot-grid';
 
+    // Líneas de graticula (meridianos/paralelos) muy tenues para reforzar la sensación de "mapa completo".
+    const graticuleLons = useMemo(() => Array.from({ length: 7 }, (_, i) => -180 + i * 60), []);
+    const graticuleLats = useMemo(() => [-60, -30, 0, 30, 60], []);
+
     return (
         <div className="bg-cards border border-borders rounded-2xl p-5 shadow-xs">
             <div className="flex items-start justify-between gap-4 mb-3 flex-wrap">
                 <div>
                     <h2 className="text-base font-bold text-textMain">Mapa Global de Infraestructura</h2>
                     <p className="text-xs text-textSec mt-0.5">
-                        Ubicación física de cada región AWS y enlaces de backbone hacia el hub primario ({hub?.name}).
+                        Ubicación física de las {regions.length} regiones AWS activas y enlaces de backbone hacia el hub primario ({hub?.name}).
                     </p>
                 </div>
                 <div className="flex items-center gap-4 text-[11px] font-semibold text-textSec">
@@ -66,19 +80,32 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                 </div>
             </div>
 
-            <div className="relative w-full aspect-[1000/380] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+            <div className="relative w-full aspect-[1000/440] rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
                 <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="w-full h-full block" role="img" aria-label="Mapa global de regiones desplegadas">
                     <defs>
                         <pattern id={dotGridId} width="7" height="7" patternUnits="userSpaceOnUse">
                             <circle cx="1.1" cy="1.1" r="1.1" fill="#2E4269" />
                         </pattern>
-                        <radialGradient id="mapGlow" cx="50%" cy="35%" r="75%">
+                        <radialGradient id="mapGlow" cx="50%" cy="35%" r="85%">
                             <stop offset="0%" stopColor="#0F1E3D" />
                             <stop offset="100%" stopColor="#060B18" />
                         </radialGradient>
                     </defs>
 
                     <rect x="0" y="0" width={VIEW_W} height={VIEW_H} fill="url(#mapGlow)" />
+
+                    {/* Graticula: meridianos y paralelos de referencia, muy tenues */}
+                    <g stroke="#1E2E4E" strokeWidth="0.6" opacity="0.55">
+                        {graticuleLons.map((lon) => {
+                            const p = project(0, lon);
+                            return <line key={`m-${lon}`} x1={p.x} y1="0" x2={p.x} y2={VIEW_H} />;
+                        })}
+                        {graticuleLats.map((lat) => {
+                            const p = project(lat, 0);
+                            return <line key={`p-${lat}`} x1="0" y1={p.y} x2={VIEW_W} y2={p.y} />;
+                        })}
+                        <line x1="0" y1={VIEW_H / 2} x2={VIEW_W} y2={VIEW_H / 2} stroke="#2E4269" strokeWidth="0.9" />
+                    </g>
 
                     {/* Continentes estilizados como retículas de puntos (silueta aproximada) */}
                     <g opacity="0.9">
@@ -109,14 +136,14 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                                 const midX = (hubPos.x + p.x) / 2;
                                 const midY = Math.min(hubPos.y, p.y) - 55;
                                 const path = `M ${hubPos.x} ${hubPos.y} Q ${midX} ${midY} ${p.x} ${p.y}`;
-                                const isDegraded = r.status === 'Maintenance';
+                                const isDown = r.status !== 'Operational';
                                 return (
                                     <g key={r.id}>
-                                        <path d={path} fill="none" stroke={isDegraded ? '#DC2626' : '#2563EB'} strokeOpacity="0.35" strokeWidth="1.5" />
+                                        <path d={path} fill="none" stroke={isDown ? '#DC2626' : '#2563EB'} strokeOpacity="0.35" strokeWidth="1.5" />
                                         <path
                                             d={path}
                                             fill="none"
-                                            stroke={isDegraded ? '#F87171' : '#60A5FA'}
+                                            stroke={isDown ? '#F87171' : '#60A5FA'}
                                             strokeWidth="1.5"
                                             strokeDasharray="4 7"
                                             className="map-flow-line"
@@ -130,6 +157,16 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                         const p = project(r.lat, r.lon);
                         const color = STATUS_COLOR[r.status];
                         const active = hoverId === r.id || selectedRegionId === r.id;
+
+                        // Anti-colisión simple de etiquetas según cercanía a los bordes del mapa.
+                        const flipLeft = p.x > VIEW_W - 140;
+                        const flipDown = p.y < 46;
+                        const textAnchor = flipLeft ? 'end' : 'start';
+                        const xOffset = flipLeft ? -10 : 10;
+                        const yName = flipDown ? 24 : -14;
+                        const yId = flipDown ? 36 : -2;
+                        const yInfo = flipDown ? 48 : 12;
+
                         return (
                             <g
                                 key={r.id}
@@ -143,8 +180,9 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                                 {r.isHub && <circle r="14" fill="none" stroke={color} strokeWidth="1" opacity="0.4" />}
                                 <circle r={active ? 6 : 5} fill={color} stroke="#020617" strokeWidth="2" />
                                 <text
-                                    x="10"
-                                    y="-14"
+                                    x={xOffset}
+                                    y={yName}
+                                    textAnchor={textAnchor}
                                     fontSize="11"
                                     fontWeight="700"
                                     fill={active ? '#FFFFFF' : '#E2E8F0'}
@@ -152,10 +190,10 @@ export const WorldMap: React.FC<WorldMapProps> = ({ regions, selectedRegionId, o
                                 >
                                     {r.name}
                                 </text>
-                                <text x="10" y="-2" fontSize="9.5" fontFamily="monospace" fill="#7C93B8">
+                                <text x={xOffset} y={yId} textAnchor={textAnchor} fontSize="9.5" fontFamily="monospace" fill="#7C93B8">
                                     {r.id}
                                 </text>
-                                <text x="10" y="12" fontSize="9" fill="#64748B" style={{ fontFamily: 'Inter, sans-serif' }}>
+                                <text x={xOffset} y={yInfo} textAnchor={textAnchor} fontSize="9" fill="#64748B" style={{ fontFamily: 'Inter, sans-serif' }}>
                                     {r.deployedServicesCount} servicios · {r.location}
                                 </text>
                             </g>

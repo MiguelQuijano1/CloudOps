@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { INITIAL_SERVICES } from '../data/awsServices';
 import { ServiceCard } from '../components/ServiceCard';
 import { ServiceDetailModal } from '../components/ServiceDetailModal';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
 import { Search, Gift, Link2, Gauge, Globe, ShieldCheck, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useCloudData } from '../context/CloudDataContext';
 import { exportCsvReport } from '../utils/exportCsv';
 import type { AWSService } from '../types';
 
@@ -38,11 +38,12 @@ const FREE_TIER = [
 
 export const ServicesView: React.FC = () => {
   const { selectedRegion, addNotification } = useApp();
+  const { services } = useCloudData();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [selectedService, setSelectedService] = useState<AWSService | null>(null);
 
-  const filteredServices = INITIAL_SERVICES.filter((srv) => {
+  const filteredServices = services.filter((srv) => {
     const matchesSearch =
       srv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       srv.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -50,7 +51,7 @@ export const ServicesView: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const activeCount = INITIAL_SERVICES.filter((s) => s.status === 'Active').length;
+  const activeCount = services.filter((s) => s.status === 'Active').length;
 
   const exportCatalog = () => {
     exportCsvReport({
@@ -59,7 +60,7 @@ export const ServicesView: React.FC = () => {
       regionId: selectedRegion,
       columns: ['Servicio', 'Categoría', 'Estado', 'Descripción'],
       rows: filteredServices.map((s) => [s.name, s.category, s.status, s.description]),
-      totals: [['Total filtrado', filteredServices.length], ['Total catálogo', INITIAL_SERVICES.length]],
+      totals: [['Total filtrado', filteredServices.length], ['Total catálogo', services.length]],
     });
     addNotification({
       title: 'Catálogo exportado',
@@ -82,7 +83,7 @@ export const ServicesView: React.FC = () => {
         eyebrow="Módulo 7 · Práctica Integrativa"
         title="Catálogo de Servicios AWS Desplegados"
         description="Inventario integral de recursos de nube aprovisionados y auditados en la arquitectura propuesta."
-        badge={{ label: `${activeCount} de ${INITIAL_SERVICES.length} Desplegados y Operativos`, tone: 'security' }}
+        badge={{ label: `${activeCount} de ${services.length} Desplegados y Operativos`, tone: 'security' }}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button

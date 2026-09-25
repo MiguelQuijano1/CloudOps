@@ -5,7 +5,8 @@ import { BarChart } from '../components/BarChart';
 import { StatusBadge } from '../components/StatusBadge';
 import { CloudWatchMetrics } from '../components/CloudWatchMetrics';
 import { WellArchitectedScorecard } from '../components/WellArchitectedScorecard';
-import { MOCK_SECURITY_CHECKS, INITIAL_SERVICES, MOCK_REGIONS, INITIAL_COSTS } from '../data/awsServices';
+import { INITIAL_COSTS } from '../data/awsServices';
+import { useCloudData } from '../context/CloudDataContext';
 import {
   Server,
   Globe,
@@ -29,10 +30,14 @@ import type { RegionInfo, CloudPlan, CostItem } from '../types';
 
 /** Servicios desplegados por región (misma lógica que Infraestructura) */
 const REGION_SERVICE_MAP: Record<string, string[]> = {
-  'us-east-1': ['EC2', 'S3', 'RDS', 'IAM', 'VPC', 'Route 53', 'CloudFront'],
-  'us-west-2': ['EC2', 'S3', 'RDS', 'VPC'],
+  'us-east-1': ['EC2', 'S3', 'RDS', 'IAM', 'VPC', 'Route 53', 'CloudFront', 'Lambda', 'DynamoDB', 'Elastic Load Balancing', 'CloudWatch', 'KMS', 'SNS'],
+  'us-west-2': ['EC2', 'S3', 'RDS', 'VPC', 'Lambda', 'DynamoDB'],
   'sa-east-1': ['EC2', 'S3'],
   'eu-west-1': ['EC2', 'RDS', 'VPC'],
+  'eu-central-1': ['EC2', 'S3', 'RDS', 'VPC', 'Elastic Load Balancing', 'CloudWatch'],
+  'ap-southeast-1': ['EC2', 'S3', 'Lambda', 'DynamoDB', 'CloudFront'],
+  'ap-northeast-1': ['EC2', 'S3', 'RDS', 'VPC'],
+  'ap-south-1': ['EC2', 'S3', 'Lambda'],
 };
 
 /** Nodos de arquitectura base; se activan según servicios de la región */
@@ -108,6 +113,10 @@ const REGION_COST_FACTOR: Record<string, number> = {
   'us-west-2': 0.95,
   'sa-east-1': 1.15,
   'eu-west-1': 1.05,
+  'eu-central-1': 1.08,
+  'ap-southeast-1': 1.12,
+  'ap-northeast-1': 1.2,
+  'ap-south-1': 0.9,
 };
 
 function isRegionInUse(region: RegionInfo | undefined): boolean {
@@ -134,6 +143,7 @@ function regionUsageLabel(region: RegionInfo | undefined): {
 
 export const DashboardView: React.FC = () => {
   const { selectedRegion } = useApp();
+  const { regions: MOCK_REGIONS, services: INITIAL_SERVICES, securityChecks: MOCK_SECURITY_CHECKS } = useCloudData();
 
   const [storedPlans] = useState<CloudPlan[]>(() => {
     const saved = localStorage.getItem('cloud_plans');

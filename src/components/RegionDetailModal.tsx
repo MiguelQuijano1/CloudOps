@@ -8,6 +8,8 @@ import {
   Activity,
   DollarSign,
   Layers,
+  Wrench,
+  CheckCircle2,
 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import type { RegionInfo, AWSService } from '../types';
@@ -16,12 +18,15 @@ interface RegionDetailModalProps {
   region: RegionInfo;
   services: AWSService[];
   onClose: () => void;
+  /** Si se provee, permite simular un incidente/recuperación de la región (persistido en local). */
+  onToggleStatus?: (region: RegionInfo) => void;
 }
 
 export const RegionDetailModal: React.FC<RegionDetailModalProps> = ({
   region,
   services,
   onClose,
+  onToggleStatus,
 }) => {
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -82,6 +87,23 @@ export const RegionDetailModal: React.FC<RegionDetailModalProps> = ({
             <span className="text-xs px-2.5 py-1 rounded-lg bg-bgMain border border-borders text-textSec">
               {activeCount} activos
             </span>
+            {onToggleStatus && (
+              <button
+                type="button"
+                onClick={() => onToggleStatus(region)}
+                className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-borders bg-bgMain text-textMain hover:border-primary/50 transition-colors"
+              >
+                {region.status === 'Operational' ? (
+                  <>
+                    <Wrench size={13} className="text-costs" /> Simular mantenimiento
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={13} className="text-security" /> Marcar operativa
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

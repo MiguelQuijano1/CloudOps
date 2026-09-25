@@ -8,13 +8,23 @@ export const INITIAL_SERVICES: AWSService[] = [
   { id: '5', name: 'VPC', category: 'Networking', description: 'Red virtual aislada para aprovisionar recursos en la nube.', mainFunction: 'Aislamiento de red, subredes y tablas de ruteo', status: 'Active', monthlyCost: 0, spec: { engine: 'CIDR 10.0.0.0/16' } },
   { id: '6', name: 'Route 53', category: 'Networking', description: 'Servicio de DNS web escalable y de alta disponibilidad.', mainFunction: 'Administración de DNS y chequeos de salud', status: 'Active', monthlyCost: 15, spec: { engine: 'Routing Policy: Latency-based' } },
   { id: '7', name: 'CloudFront', category: 'Networking', description: 'Red de distribución de contenido (CDN) rápida para entregar datos de forma segura.', mainFunction: 'Caché de contenido estático/dinámico y aceleración', status: 'Active', monthlyCost: 65, spec: { engine: 'Edge Locations: 450+' } },
+  { id: '8', name: 'Lambda', category: 'Compute', description: 'Ejecución de código sin aprovisionar ni administrar servidores.', mainFunction: 'Procesamiento de eventos y automatización serverless', status: 'Active', monthlyCost: 18, spec: { engine: 'Runtime: Node.js 20.x' } },
+  { id: '9', name: 'DynamoDB', category: 'Database', description: 'Base de datos NoSQL de clave-valor totalmente administrada.', mainFunction: 'Persistencia de baja latencia para sesiones y catálogos', status: 'Active', monthlyCost: 32, spec: { engine: 'On-Demand Capacity' } },
+  { id: '10', name: 'Elastic Load Balancing', category: 'Networking', description: 'Distribución automática del tráfico entrante entre múltiples destinos.', mainFunction: 'Balanceo de carga de aplicaciones (ALB) y capa de red', status: 'Active', monthlyCost: 22, spec: { engine: 'Application Load Balancer' } },
+  { id: '11', name: 'CloudWatch', category: 'Security', description: 'Monitoreo de métricas, logs y alarmas de toda la infraestructura.', mainFunction: 'Observabilidad, alertas y trazabilidad operativa', status: 'Active', monthlyCost: 12, spec: { engine: 'Logs + Metrics + Alarms' } },
+  { id: '12', name: 'KMS', category: 'Security', description: 'Administración centralizada de llaves de cifrado.', mainFunction: 'Cifrado de datos en reposo para S3, RDS y EBS', status: 'Active', monthlyCost: 3, spec: { engine: 'Customer Managed Keys' } },
+  { id: '13', name: 'SNS', category: 'Networking', description: 'Mensajería pub/sub totalmente administrada.', mainFunction: 'Notificaciones y desacoplamiento entre microservicios', status: 'Planned', monthlyCost: 5, spec: { engine: 'Standard Topics' } },
 ];
 
 export const MOCK_REGIONS: RegionInfo[] = [
-  { id: 'us-east-1', name: 'US East (N. Virginia)', location: 'EE.UU. Este', deployedServicesCount: 7, status: 'Operational', lat: 37.5, lon: -78.6, isHub: true },
-  { id: 'us-west-2', name: 'US West (Oregon)', location: 'EE.UU. Oeste', deployedServicesCount: 4, status: 'Operational', lat: 45.8, lon: -119.7 },
+  { id: 'us-east-1', name: 'US East (N. Virginia)', location: 'EE.UU. Este', deployedServicesCount: 13, status: 'Operational', lat: 37.5, lon: -78.6, isHub: true },
+  { id: 'us-west-2', name: 'US West (Oregon)', location: 'EE.UU. Oeste', deployedServicesCount: 6, status: 'Operational', lat: 45.8, lon: -119.7 },
   { id: 'sa-east-1', name: 'South America (São Paulo)', location: 'Sudamérica', deployedServicesCount: 2, status: 'Operational', lat: -23.5, lon: -46.6 },
-  { id: 'eu-west-1', name: 'EU (Ireland)', location: 'Europa', deployedServicesCount: 3, status: 'Maintenance', lat: 53.3, lon: -8.0 },
+  { id: 'eu-west-1', name: 'EU (Ireland)', location: 'Europa Oeste', deployedServicesCount: 3, status: 'Maintenance', lat: 53.3, lon: -8.0 },
+  { id: 'eu-central-1', name: 'EU (Frankfurt)', location: 'Europa Central', deployedServicesCount: 6, status: 'Operational', lat: 50.1, lon: 8.7 },
+  { id: 'ap-southeast-1', name: 'Asia Pacific (Singapore)', location: 'Asia Pacífico', deployedServicesCount: 5, status: 'Operational', lat: 1.35, lon: 103.8 },
+  { id: 'ap-northeast-1', name: 'Asia Pacific (Tokyo)', location: 'Asia Oriental', deployedServicesCount: 4, status: 'Operational', lat: 35.7, lon: 139.7 },
+  { id: 'ap-south-1', name: 'Asia Pacific (Mumbai)', location: 'Asia del Sur', deployedServicesCount: 3, status: 'Degraded', lat: 19.1, lon: 72.9 },
 ];
 
 export const MOCK_SECURITY_CHECKS: SecurityItem[] = [

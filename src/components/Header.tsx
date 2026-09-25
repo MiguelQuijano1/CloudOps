@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Bell, Server, Menu, Moon, Sun, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NotificationsPanel } from './NotificationsPanel';
-import { MOCK_REGIONS } from '../data/awsServices';
+import { useCloudData } from '../context/CloudDataContext';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -10,6 +10,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { theme, toggleTheme, selectedRegion, setSelectedRegion, unreadCount } = useApp();
+  const { regions } = useCloudData();
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             className="pl-8 pr-3 py-1.5 bg-bgMain border border-borders rounded-xl text-xs font-semibold text-textMain focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none cursor-pointer min-w-[160px]"
             aria-label="Seleccionar región"
           >
-            {MOCK_REGIONS.map((r) => (
+            {regions.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
               </option>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MOCK_SECURITY_CHECKS } from '../data/awsServices';
+import { useCloudData } from '../context/CloudDataContext';
 import { SecurityCard } from '../components/SecurityCard';
 import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
@@ -9,11 +9,12 @@ import { exportCsvReport } from '../utils/exportCsv';
 
 export const SecurityView: React.FC = () => {
   const { selectedRegion, addNotification } = useApp();
+  const { securityChecks } = useCloudData();
   const [auditing, setAuditing] = useState(false);
-  const total = MOCK_SECURITY_CHECKS.length;
-  const correct = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'correct').length;
-  const issues = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'issue').length;
-  const reviews = MOCK_SECURITY_CHECKS.filter((c) => c.status === 'review').length;
+  const total = securityChecks.length;
+  const correct = securityChecks.filter((c) => c.status === 'correct').length;
+  const issues = securityChecks.filter((c) => c.status === 'issue').length;
+  const reviews = securityChecks.filter((c) => c.status === 'review').length;
   const score = Math.round((correct / total) * 100);
 
   const runAudit = () => {
@@ -37,7 +38,7 @@ export const SecurityView: React.FC = () => {
       slug: 'seguridad',
       regionId: selectedRegion,
       columns: ['Control', 'Estado', 'Detalle'],
-      rows: MOCK_SECURITY_CHECKS.map((c) => [c.title, c.status, c.description]),
+      rows: securityChecks.map((c) => [c.title, c.status, c.description]),
       totals: [
         ['Well-Architected Score', `${score}/100`],
         ['Controles aprobados', `${correct} / ${total}`],
@@ -132,7 +133,7 @@ export const SecurityView: React.FC = () => {
           <Lock className="text-primary" size={20} /> Auditoría de Seguridad e IAM
         </h2>
         <div className="space-y-3">
-          {MOCK_SECURITY_CHECKS.map((item) => (
+          {securityChecks.map((item) => (
             <SecurityCard key={item.id} item={item} />
           ))}
         </div>
