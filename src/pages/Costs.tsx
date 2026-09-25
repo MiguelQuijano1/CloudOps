@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { INITIAL_COSTS } from '../data/awsServices';
 import type { CostItem } from '../types';
 import { CostCard } from '../components/CostCard';
 import { BarChart } from '../components/BarChart';
@@ -8,6 +7,7 @@ import { PageHeader } from '../components/PageHeader';
 import { MiniStat } from '../components/MiniStat';
 import { DollarSign, Plus, Download, TrendingDown, PiggyBank } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useCloudData } from '../context/CloudDataContext';
 import { exportCsvReport } from '../utils/exportCsv';
 
 const BAR_COLORS = [
@@ -23,32 +23,16 @@ const BAR_COLORS = [
 
 export const CostsView: React.FC = () => {
   const { selectedRegion, addNotification } = useApp();
-  const [costs, setCosts] = useState<CostItem[]>(() => {
-    const saved = localStorage.getItem('cloudops_costs');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return INITIAL_COSTS;
-      }
-    }
-    return INITIAL_COSTS;
-  });
+  const { costs, addCost, deleteCost } = useCloudData();
   const [serviceName, setServiceName] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [hoursPerMonth, setHoursPerMonth] = useState(730);
   const [costPerHour, setCostPerHour] = useState(0.05);
 
-  const persistCosts = (next: CostItem[]) => {
-    setCosts(next);
-    localStorage.setItem('cloudops_costs', JSON.stringify(next));
-  };
-
   const handleAddCost = (e: React.FormEvent) => {
     e.preventDefault();
     const monthlyCost = quantity * hoursPerMonth * costPerHour;
-    const newItem: CostItem = {
-      id: Date.now().toString(),
+    const newItem: Omit<CostItem, 'id'> = {
       serviceName: serviceName.trim(),
       quantity,
       hoursPerMonth,
@@ -56,7 +40,7 @@ export const CostsView: React.FC = () => {
       monthlyCost,
       annualCost: monthlyCost * 12,
     };
-    persistCosts([...costs, newItem]);
+    addCost(newItem);
     setServiceName('');
     setQuantity(1);
     setHoursPerMonth(730);
@@ -70,8 +54,7 @@ export const CostsView: React.FC = () => {
 
   const handleDeleteCost = (id: string) => {
     const item = costs.find((c) => c.id === id);
-    const next = costs.filter((c) => c.id !== id);
-    persistCosts(next);
+    deleteCost(id);
     if (item) {
       addNotification({
         title: 'Estimación eliminada',

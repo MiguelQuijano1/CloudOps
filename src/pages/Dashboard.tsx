@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { BarChart } from '../components/BarChart';
 import { StatusBadge } from '../components/StatusBadge';
 import { CloudWatchMetrics } from '../components/CloudWatchMetrics';
 import { WellArchitectedScorecard } from '../components/WellArchitectedScorecard';
-import { INITIAL_COSTS } from '../data/awsServices';
 import { useCloudData } from '../context/CloudDataContext';
 import {
   Server,
@@ -26,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Link } from 'react-router-dom';
-import type { RegionInfo, CloudPlan, CostItem } from '../types';
+import type { RegionInfo } from '../types';
 
 /** Servicios desplegados por región (misma lógica que Infraestructura) */
 const REGION_SERVICE_MAP: Record<string, string[]> = {
@@ -143,17 +142,13 @@ function regionUsageLabel(region: RegionInfo | undefined): {
 
 export const DashboardView: React.FC = () => {
   const { selectedRegion } = useApp();
-  const { regions: MOCK_REGIONS, services: INITIAL_SERVICES, securityChecks: MOCK_SECURITY_CHECKS } = useCloudData();
-
-  const [storedPlans] = useState<CloudPlan[]>(() => {
-    const saved = localStorage.getItem('cloud_plans');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [storedCosts] = useState<CostItem[]>(() => {
-    const saved = localStorage.getItem('cloudops_costs');
-    return saved ? JSON.parse(saved) : INITIAL_COSTS;
-  });
+  const {
+    regions: MOCK_REGIONS,
+    services: INITIAL_SERVICES,
+    securityChecks: MOCK_SECURITY_CHECKS,
+    plans: storedPlans,
+    costs: storedCosts,
+  } = useCloudData();
 
   const regionInfo = MOCK_REGIONS.find((r) => r.id === selectedRegion);
   const serviceNames = REGION_SERVICE_MAP[selectedRegion] ?? [];
@@ -213,7 +208,7 @@ export const DashboardView: React.FC = () => {
           <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1.5">
             Infraestructura AWS CloudOps · Producción Multi-Región
           </p>
-          <h1 className="text-2xl font-bold text-textMain">Consola de Control Central</h1>
+          <h1 className="text-2xl font-bold text-textMain">Dashboard Central</h1>
           <p className="text-textSec text-sm mt-1">
             Monitoreo y estado de la solución en{' '}
             <strong className="text-textMain">{regionInfo?.name ?? selectedRegion}</strong>

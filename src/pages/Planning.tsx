@@ -3,6 +3,7 @@ import type { CloudPlan } from '../types';
 import { INITIAL_SERVICES } from '../data/awsServices';
 import { Save, CheckCircle, FileText, Users, History, Share2, Layers, Gauge, Clock } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { useCloudData } from '../context/CloudDataContext';
 
 const AVAILABILITY_OPTIONS = ['99.0%', '99.5%', '99.9%', '99.99%'];
 const SERVICE_OPTIONS = INITIAL_SERVICES.map((s) => s.name);
@@ -18,12 +19,19 @@ const APP_TYPE_OPTIONS = [
   'Batch / Procesamiento',
   'Otro',
 ];
+const MIGRATION_GOAL_OPTIONS = [
+  'Escalabilidad y Reducción de Latencia',
+  'Reducción de Costos Operativos',
+  'Alta Disponibilidad y Resiliencia',
+  'Modernización a Arquitectura Cloud-Native',
+  'Cumplimiento y Seguridad',
+  'Continuidad de Negocio / Disaster Recovery',
+  'Mejora de Rendimiento',
+  'Otro',
+];
 
 export const PlanningView: React.FC = () => {
-  const [plans, setPlans] = useState<CloudPlan[]>(() => {
-    const saved = localStorage.getItem('cloud_plans');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { plans, addPlan } = useCloudData();
 
   const [form, setForm] = useState<Omit<CloudPlan, 'id' | 'createdAt'>>({
     solutionName: '',
@@ -47,14 +55,7 @@ export const PlanningView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newPlan: CloudPlan = {
-      ...form,
-      id: Date.now().toString(),
-      createdAt: new Date().toLocaleDateString(),
-    };
-    const updated = [...plans, newPlan];
-    setPlans(updated);
-    localStorage.setItem('cloud_plans', JSON.stringify(updated));
+    addPlan(form);
     setForm({
       solutionName: '',
       appType: 'Web Enterprise App',
@@ -185,12 +186,15 @@ export const PlanningView: React.FC = () => {
 
             <div>
               <label className="text-xs font-semibold text-textSec block mb-1">Objetivo de Migración</label>
-              <input
-                type="text"
+              <select
                 value={form.migrationGoal}
                 onChange={(e) => setForm({ ...form, migrationGoal: e.target.value })}
                 className="w-full border border-borders p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 bg-bgMain"
-              />
+              >
+                {MIGRATION_GOAL_OPTIONS.map((goal) => (
+                  <option key={goal} value={goal}>{goal}</option>
+                ))}
+              </select>
             </div>
           </div>
 
